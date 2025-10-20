@@ -3,17 +3,14 @@
 
 int main()
 {
-	Simulation simulation;
 
+	Simulation simulation;
 	if (!simulation.init())
 	{
 		std::cerr << "Failed to initialise simulation";
 		return 1;
 	}
-
 	simulation.run();
-
-	simulation.~Simulation();
 
 	return 0;
 }

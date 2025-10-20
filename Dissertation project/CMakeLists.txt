@@ -29,7 +29,12 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(GLM)
 
 # Add source to this project's executable.
-add_executable (${PROJECT_NAME} "main.cpp"  "src/Simulation.h" "src/Simulation.cpp")
+add_executable (${PROJECT_NAME} "main.cpp"  
+"src/Simulation.h"
+"src/Simulation.cpp" 
+"src/Window/WindowBase"
+"src/Window/DrawWindow.h" 
+"src/camera.h")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
