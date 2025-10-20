@@ -29,7 +29,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(GLM)
 
 # Add source to this project's executable.
-add_executable (${PROJECT_NAME} "main.cpp" )
+add_executable (${PROJECT_NAME} "main.cpp"  "src/Simulation.h" "src/Simulation.cpp")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
@@ -40,7 +40,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE "glad/src")
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/Data/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/Data/)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
+	set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 endif()
 
 # TODO: Add tests and install targets if needed.
