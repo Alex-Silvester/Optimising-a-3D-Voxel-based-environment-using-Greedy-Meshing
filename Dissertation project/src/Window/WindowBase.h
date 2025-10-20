@@ -59,9 +59,9 @@ public:
 		processInput();
 	}
 
-private:
+protected:
 
-	bool initialise()
+	virtual bool initialise()
 	{
 		// glfw: initialize and configure
 		// ------------------------------
@@ -88,6 +88,8 @@ private:
 
 		return true;
 	}
+
+private:
 
 	GLFWwindow* createWindow()
 	{

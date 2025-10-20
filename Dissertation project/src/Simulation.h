@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Window/WindowBase.h"
-
 #include "Window/DrawWindow.h"
+#include "shapes/triangle.h"
 
 class Simulation
 {
@@ -27,6 +27,8 @@ private:
 private:
 
 	DrawWindow m_window;
+
+	Triangle test_triangle;
 
 };
 
@@ -58,5 +60,5 @@ void Simulation::update()
 
 void Simulation::render()
 {
-
+	//m_window.draw(test_triangle);
 }
