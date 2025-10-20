@@ -1,0 +1,37 @@
+# ninja log v6
+341	456	7826556831749128	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-configure	b39e4d014f481982
+6	179	7826554966022390	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-mkdir	60a29cf837b3c50a
+5	230	7826556827319994	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-update	4bbfe067f110887c
+230	340	7826556830594569	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-patch	c631ce25023b1809
+6	179	7826554966022390	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-mkdir	60a29cf837b3c50a
+457	560	7826556832787298	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-build	8817efb6ef669688
+230	340	7826556830594569	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-patch	c631ce25023b1809
+180	3364	7826554997865301	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-download	e11e7f1b00957b46
+5	230	7826556827319994	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-update	4bbfe067f110887c
+180	3364	7826554997865301	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-download	e11e7f1b00957b46
+341	456	7826556831749128	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-configure	b39e4d014f481982
+821	987	7826556837054703	CMakeFiles/glfw-populate-complete	555ab94873e1f722
+821	987	7826556837054703	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-done	555ab94873e1f722
+457	560	7826556832787298	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-build	8817efb6ef669688
+560	719	7826556834363812	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-install	76799463e3c91812
+560	719	7826556834363812	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-install	76799463e3c91812
+719	821	7826556835386158	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-test	94fe0dd4b709b0eb
+719	821	7826556835386158	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-test	94fe0dd4b709b0eb
+821	987	7826556837054703	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-done	555ab94873e1f722
+821	987	7826556837054703	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/CMakeFiles/glfw-populate-complete	555ab94873e1f722
+6	219	7826557025622137	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-update	4bbfe067f110887c
+6	219	7826557025622137	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-update	4bbfe067f110887c
+220	369	7826557029186067	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-patch	c631ce25023b1809
+220	369	7826557029186067	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-patch	c631ce25023b1809
+369	484	7826557030315939	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-configure	b39e4d014f481982
+369	484	7826557030315939	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-configure	b39e4d014f481982
+484	590	7826557031378664	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-build	8817efb6ef669688
+484	590	7826557031378664	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-build	8817efb6ef669688
+590	736	7826557032849157	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-install	76799463e3c91812
+590	736	7826557032849157	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-install	76799463e3c91812
+736	834	7826557033840380	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-test	94fe0dd4b709b0eb
+736	834	7826557033840380	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-test	94fe0dd4b709b0eb
+835	1002	7826557035509308	CMakeFiles/glfw-populate-complete	555ab94873e1f722
+835	1002	7826557035509308	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-done	555ab94873e1f722
+835	1002	7826557035509308	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/CMakeFiles/glfw-populate-complete	555ab94873e1f722
+835	1002	7826557035509308	C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-done	555ab94873e1f722

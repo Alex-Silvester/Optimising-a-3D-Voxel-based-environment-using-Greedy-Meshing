@@ -1,0 +1,14 @@
+# Target labels
+ glfw-populate
+# Source files and their labels
+C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/CMakeFiles/glfw-populate
+C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/CMakeFiles/glfw-populate.rule
+C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/CMakeFiles/glfw-populate-complete.rule
+C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-build.rule
+C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-configure.rule
+C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-download.rule
+C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-install.rule
+C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-mkdir.rule
+C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-patch.rule
+C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-test.rule
+C:/Users/alexs/Games_Tech/3rd year/CCTP/Project/Optimising a 3D, Voxel-based environment using Greedy Meshing/Dissertation project/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-update.rule
