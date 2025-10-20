@@ -1,4 +1,4 @@
-# CMakeList.txt : CMake project for Dissertation project, include source and define
+﻿# CMakeList.txt : CMake project for Dissertation project, include source and define
 # project specific logic here.
 #
 cmake_minimum_required (VERSION 3.8)
@@ -34,6 +34,7 @@ add_executable (${PROJECT_NAME} "main.cpp"
 "src/Simulation.cpp" 
 "src/Window/WindowBase"
 "src/Window/DrawWindow.h" 
+"src/camera.h")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
