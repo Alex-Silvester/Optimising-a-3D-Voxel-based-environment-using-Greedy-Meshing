@@ -10,7 +10,6 @@ public:
 
 	Simulation()
 	{
-
 	}
 
 	bool init();
@@ -34,6 +33,11 @@ private:
 
 bool Simulation::init()
 {
+	m_window.initialise();
+
+	glm::mat4 projection = glm::perspective(glm::radians(m_window.getCamera().Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+	test_triangle.initialise(projection);
+
 	return true;
 }
 
@@ -60,5 +64,5 @@ void Simulation::update()
 
 void Simulation::render()
 {
-	//m_window.draw(test_triangle);
+	m_window.draw(test_triangle);
 }

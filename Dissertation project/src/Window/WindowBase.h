@@ -14,7 +14,9 @@ class WindowBase
 {
 public:
 
-	WindowBase(float size_x = SCREEN_WIDTH, float size_y = SCREEN_WIDTH, const char* name = "")
+	WindowBase() = default;
+
+	WindowBase(float size_x, float size_y, const char* name = "")
 	{
 		if (!initialise())
 		{
