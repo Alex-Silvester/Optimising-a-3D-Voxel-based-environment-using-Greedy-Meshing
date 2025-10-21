@@ -18,7 +18,7 @@ public:
     m_shader.use();
     m_shader.setVec3("objectColor", 1.0f, 1.0f, 1.0f);
     m_shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-    m_shader.setVec3("lightPos", glm::vec3(0,10,0));
+    m_shader.setVec3("lightPos", glm::vec3(0,0,0));
     m_shader.setInt("intensity", 1);
 
     // pass projection matrix to shader (note that in this case it could change every frame)
