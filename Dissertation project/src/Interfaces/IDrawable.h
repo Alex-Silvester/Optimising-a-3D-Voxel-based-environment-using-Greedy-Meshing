@@ -11,6 +11,9 @@ class IDrawable
 {
 public:
 
+  //default initialisation for the drawable object
+  virtual void initialise(glm::mat4& projection) = 0;
+
   void setShader(const char* vertex_path, const char* fragment_path, glm::mat4& projection)
   {
     m_shader.init(vertex_path, fragment_path);
@@ -24,10 +27,10 @@ public:
     // pass projection matrix to shader (note that in this case it could change every frame)
     m_shader.setMat4("projection", projection);
   }
-
-  void setVertices(const std::vector<float>& vertices)
+  
+  void setVertices(const std::vector<float>& m_vertices)
   {
-    this->vertices = vertices;
+    this->m_vertices = m_vertices;
   }
 
   Shader& getShader()
@@ -37,8 +40,38 @@ public:
 
   const std::vector<float>& getVertices() const
   {
-    return vertices;
+    return m_vertices;
 	}
+
+  void setPosition(const glm::vec3& pos)
+  {
+    m_position = pos;
+  }
+
+  void scale(glm::vec3 scale)
+  {
+    m_scale = scale;
+
+    for (int i = 0; i < m_vertices.size(); i++)
+    {
+      if (i % 9 <= 2)
+      {
+        if (i % 3 == 0)
+        {
+          m_vertices[i] *= m_scale.x;
+        }
+        else if (i % 3 == 1)
+        {
+          m_vertices[i] *= m_scale.y;
+        }
+        else
+        {
+          m_vertices[i] *= m_scale.z;
+        }
+      }
+    }
+  }
+
 
 private:
 
@@ -49,24 +82,28 @@ private:
     m_shader.use();
 
     m_shader.setMat4("view", view);
+    m_shader.setVec3("position", m_position);
 
     // render
     glBindVertexArray(VAO);
 
     //explicitly bind the VBO
 		//glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(float), &m_vertices[0], GL_STATIC_DRAW);
 
     // calculate the model matrix for each object and pass it to shader before drawing
     glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
     model = glm::translate(model, glm::vec3(0.f));
     m_shader.setMat4("model", model);
 
-    glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 9);
+    glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
 	}
 
 private:
 
-	std::vector<float> vertices;
+  glm::vec3 m_position = { 0,0,0 };
+	std::vector<float> m_vertices;
   Shader m_shader;
+
+  glm::vec3 m_scale = { 1.0f , 1.0f, 1.0f };
 };

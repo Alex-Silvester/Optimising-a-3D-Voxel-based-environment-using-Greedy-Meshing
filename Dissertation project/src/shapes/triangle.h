@@ -8,12 +8,13 @@ public:
 
 	Triangle() = default;
 
-	void initialise(glm::mat4& projection)
+	void initialise(glm::mat4& projection) override
 	{
+		//0.5 parts wide
 		setVertices({
-				-0.5f, -0.5f, 1.0f,   1.f, 0.0f, 0.0f,   0.f, 0.f, 0.f,
-				 0.5f, -0.5f, 1.0f,   0.f, 1.f, 0.0f,   0.f, 0.f, 0.f,
-				 0.0f,  0.5f, 1.0f,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f
+				 0.0f,  0.0f, 0.0f,   1.f, 0.0f, 0.0f,   0.f, 0.f, 0.f,
+				 0.0f,  0.5f, 0.0f,   0.f, 1.f, 0.0f,   0.f, 0.f, 0.f,
+				 0.5f,  0.0f, 0.0f,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f
 			});
 
 		setShader(
