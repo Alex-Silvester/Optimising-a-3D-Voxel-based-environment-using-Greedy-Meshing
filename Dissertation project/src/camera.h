@@ -45,9 +45,9 @@ public:
   float y_velocity = 0;
 
   // constructor with vectors
-  Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
+  Camera(glm::vec3 m_position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
   {
-    Position = position;
+    Position = m_position;
     WorldUp = up;
     Yaw = yaw;
     Pitch = pitch;
@@ -123,9 +123,9 @@ public:
       Zoom = 45.0f;
   }
 
-  void changeView(glm::vec3 position, float yaw, float pitch)
+  void changeView(glm::vec3 m_position, float yaw, float pitch)
   {
-    Position = position;
+    Position = m_position;
     Yaw = yaw;
     Pitch = pitch;
 

@@ -14,7 +14,9 @@ class WindowBase
 {
 public:
 
-	WindowBase(float size_x = SCREEN_WIDTH, float size_y = SCREEN_WIDTH, const char* name = "")
+	WindowBase() = default;
+
+	WindowBase(float size_x, float size_y, const char* name = "")
 	{
 		if (!initialise())
 		{
@@ -59,9 +61,9 @@ public:
 		processInput();
 	}
 
-private:
+protected:
 
-	bool initialise()
+	virtual bool initialise()
 	{
 		// glfw: initialize and configure
 		// ------------------------------
@@ -88,6 +90,8 @@ private:
 
 		return true;
 	}
+
+private:
 
 	GLFWwindow* createWindow()
 	{

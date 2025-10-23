@@ -1,13 +1,59 @@
 #pragma once
 
 #include "WindowBase.h"
-#include "camera.h"
+#include "../camera.h"
+#include "../Interfaces/IDrawable.h"
 
 class DrawWindow : public WindowBase
 {
 public:
 
   DrawWindow() = default;
+
+  void draw(IDrawable& drawable)
+  {
+    glm::mat4 view = camera.GetViewMatrix();
+    drawable.draw(VAO, VBO, view, *this);
+  }
+
+  bool initialise() override
+  {
+    if (!WindowBase::initialise())
+    {
+      return false;
+    }
+
+    // configure global opengl state
+    // -----------------------------
+    glEnable(GL_DEPTH_TEST);
+    //glEnable(GL_CULL_FACE);
+    //glFrontFace(GL_CW);
+    glEnable(GL_MULTISAMPLE);
+
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    //position(3 floats), colour(3 floats), normal(3 floats)
+
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // texture coord attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    // normal attribute
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+  }
+
+  const Camera& getCamera() const
+  {
+    return camera;
+  }
 
 private:
 
@@ -42,7 +88,6 @@ private:
     {
       glfwSetWindowShouldClose(m_window, true);
     }
-
 
     //visuals type
     if (glfwGetKey(m_window, GLFW_KEY_F5) == GLFW_PRESS && !f5_pressed)
@@ -119,7 +164,7 @@ private:
     {
       tab_pressed = false;
     }
-	}
+  }
 
 private:
 
@@ -133,4 +178,5 @@ private:
 
 	Camera camera{ glm::vec3(0.f, 0.f, 0.f) , {0.f,1.f,0.f}, 90.f, 0.f };
 
+  unsigned int VAO = 0, VBO = 0;
 };
