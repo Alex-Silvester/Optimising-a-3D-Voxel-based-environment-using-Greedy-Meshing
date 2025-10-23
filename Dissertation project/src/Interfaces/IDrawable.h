@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "../shader.h"
+#include "../Window/DrawWindow.h"
 
 class IDrawable
 {
@@ -43,7 +44,7 @@ public:
     return m_vertices;
 	}
 
-  void setPosition(const glm::vec3& pos)
+  virtual void setPosition(const glm::vec3& pos)
   {
     m_position = pos;
   }
@@ -75,9 +76,9 @@ public:
 
 private:
 
-	friend class DrawWindow;
+  friend class DrawWindow;
 	
-	void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view)
+	virtual void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window)
   {
     m_shader.use();
 

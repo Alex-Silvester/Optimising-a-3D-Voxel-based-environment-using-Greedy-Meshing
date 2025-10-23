@@ -3,7 +3,7 @@
 #include "Window/WindowBase.h"
 #include "Window/DrawWindow.h"
 #include "shapes/triangle.h"
-#include "shapes/Rect.h"
+#include "shapes/Cube.h"
 
 class Simulation
 {
@@ -30,6 +30,7 @@ private:
 
 	Triangle test_triangle;
 	Rect test_rect;
+	Cube test_cube;
 
 };
 
@@ -44,6 +45,9 @@ bool Simulation::init()
 	test_rect.initialise(projection);
 	test_rect.setPosition({ 0,2,1 });
 	test_rect.setFacing(Axis::Z);
+
+	test_cube.initialise(projection);
+	test_cube.setPosition({ 0,0,2 });
 
 	return true;
 }
@@ -74,4 +78,6 @@ void Simulation::render()
 	m_window.draw(test_triangle);
 
 	m_window.draw(test_rect);
+
+	m_window.draw(test_cube);
 }

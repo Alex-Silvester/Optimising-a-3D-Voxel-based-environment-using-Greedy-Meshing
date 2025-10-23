@@ -34,7 +34,7 @@ add_executable (${PROJECT_NAME} "main.cpp"
 "src/Simulation.cpp" 
 "src/Window/WindowBase"
 "src/Window/DrawWindow.h" 
-"src/camera.h" "src/Interfaces/IDrawable.h" "src/shader.h" "src/shapes/triangle.h" "src/shapes/Rect.h")
+"src/camera.h" "src/Interfaces/IDrawable.h" "src/shader.h" "src/shapes/triangle.h" "src/shapes/Rect.h" "src/shapes/Cube.h"  )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)

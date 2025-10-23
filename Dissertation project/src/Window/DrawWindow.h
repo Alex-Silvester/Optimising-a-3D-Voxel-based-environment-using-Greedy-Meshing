@@ -13,7 +13,7 @@ public:
   void draw(IDrawable& drawable)
   {
     glm::mat4 view = camera.GetViewMatrix();
-    drawable.draw(VAO, VBO, view);
+    drawable.draw(VAO, VBO, view, *this);
   }
 
   bool initialise() override

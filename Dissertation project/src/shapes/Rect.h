@@ -11,6 +11,20 @@ enum Axis
 
 class Rect : public IDrawable
 {
+private:
+	struct axis_type
+	{
+		axis_type(Axis axis)
+		{
+			x = ~(axis % 2);
+			y = ~((axis >> 1) % 2);
+			z = ~((axis >> 2) % 2);
+		}
+		
+		unsigned int x : 1;
+		unsigned int y : 1;
+		unsigned int z : 1;
+	};
 public:
 
 	void initialise(glm::mat4& projection) override
@@ -36,25 +50,10 @@ public:
 			projection);
 	}
 
-	struct axis_type
-	{
-		axis_type(Axis axis)
-		{
-				x = ~(axis % 2);
-			y = ~((axis >> 1) % 2);
-			z = ~((axis >> 2) % 2);
-		}
-		
-		unsigned int x : 1;
-		unsigned int y : 1;
-		unsigned int z : 1;
-	};
 
 	void setFacing(Axis facing_axis)
 	{
-		axis_type axis = facing_axis;
-
-		
+		axis_type axis = facing_axis;		
 
 		setVertices({
 					0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f)* axis.z,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f,
