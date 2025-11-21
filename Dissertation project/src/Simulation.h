@@ -32,13 +32,15 @@ private:
 
 	DrawWindow m_window;
 
+	static constexpr int m_world_size = 50;
 	std::vector<Cube> cubes;
+
+	Shader cube_shader;
 
 	Axis x_axis = Axis(Axis_t::X);
 	Axis y_axis = Axis(Axis_t::Y);
 	Axis z_axis = Axis(Axis_t::Z);
 
-	const int m_world_size = 50;
 
 	std::atomic<long long> m_fps = 0;
 	std::atomic<bool> m_window_open = true;
@@ -47,27 +49,39 @@ private:
 
 bool Simulation::init()
 {
+	//initialise the window
 	m_window.initialise();
 
+	//iniitialise the projection matrix
 	glm::mat4 projection = glm::perspective(
 		glm::radians(m_window.getCamera().Zoom), 
 		(float)SCREEN_WIDTH / (float)SCREEN_HEIGHT,
 		0.1f, 
 		100.0f);
 
+	//timing the world creation
 	auto begin_time = std::chrono::high_resolution_clock::now();
+
+	cube_shader.init(
+		"Data/shaders/vertex/vertex_shader.txt",
+		"Data/shaders/fragment/fragment_shader.txt");
+
+	//initialising the world
 	for (int i = 0; i < m_world_size*m_world_size; i++)
 	{
 		cubes.emplace_back();
-		cubes.back().initialise(projection);
-		cubes.back().setPosition({ i/m_world_size, 0, i%m_world_size });
+		cubes[i].initialise(projection, cube_shader);
+		cubes[i].setPosition({i / m_world_size, 0, i % m_world_size});
 	}
+
+	//ending the world creation time
 	auto end_time = std::chrono::high_resolution_clock::now();
 	m_fps = std::chrono::duration<long long, std::nano>(end_time - begin_time).count();
 
 	printf("Creation time: ");
 	std::cout << std::to_string(m_fps/1000000000.f) << std::endl;
 
+	//timing the initialisation of the axes
 	begin_time = std::chrono::high_resolution_clock::now();
 	x_axis.addFaces(cubes);
 	y_axis.addFaces(cubes);

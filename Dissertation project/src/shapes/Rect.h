@@ -10,6 +10,17 @@ enum Axis_t
 	Z = 0b100
 };
 
+static const int default_sqaure_vals = 54;
+static const float default_square[default_sqaure_vals] = {
+    0.5f, 0.5f, 0.f,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f,
+   -0.5f, 0.5f, 0.f,   0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
+   -0.5f,-0.5f, 0.f,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
+
+   -0.5f,-0.5f, 0.f,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
+    0.5f,-0.5f, 0.f,   0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
+    0.5f, 0.5f, 0.f,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f
+};
+
 class Rect : public IDrawable
 {
 private:
@@ -37,19 +48,24 @@ public:
 		//back = positive-z
 
 		//1.0 parts wide
-		setVertices({
-				0.5f, 0.5f, 0.f,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f, 
-			 -0.5f, 0.5f, 0.f,   0.f, 1.f, 0.f,   0.f, 0.f, 0.f, 
-			 -0.5f,-0.5f, 0.f,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f, 
-
-			 -0.5f,-0.5f, 0.f,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
-				0.5f,-0.5f, 0.f,   0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
-				0.5f, 0.5f, 0.f,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f
-			});
+		setVertices(default_square, default_sqaure_vals);
 
 		setShader(
 			"Data/shaders/vertex/vertex_shader.txt",
 			"Data/shaders/fragment/fragment_shader.txt",
+			projection);
+	}
+
+	void initialise(glm::mat4& projection, Shader& shader) override
+	{
+		//left = positive-x
+		//up = positive-y
+		//back = positive-z
+
+		//1.0 parts wide
+		setVertices(default_square, default_sqaure_vals);
+
+		setShader(shader,
 			projection);
 	}
 

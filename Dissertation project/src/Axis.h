@@ -26,13 +26,14 @@ public:
 	}
 
 	void initialise(glm::mat4& projection) override {}
+	void initialise(glm::mat4& projection, Shader& shader) override {}
 
 	void addFaces(std::vector<Rect*> faces)
 	{
 		std::copy(faces.begin(), faces.end(), std::back_inserter(this->faces));
 	}
 
-	void addFaces(std::vector<Cube> voxels)
+	void addFaces(std::vector<Cube>& voxels)
 	{
 		using namespace std::ranges::views;
 		for (Cube& voxel : voxels)

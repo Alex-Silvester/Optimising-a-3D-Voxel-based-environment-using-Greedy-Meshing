@@ -13,6 +13,7 @@ public:
 
   //default initialisation for the drawable object
   virtual void initialise(glm::mat4& projection) = 0;
+  virtual void initialise(glm::mat4& projection, Shader& shader) = 0;
 
   void setShader(const char* vertex_path, const char* fragment_path, glm::mat4& projection)
   {
@@ -27,10 +28,29 @@ public:
     // pass projection matrix to shader (note that in this case it could change every frame)
     m_shader.setMat4("projection", projection);
   }
+
+  void setShader(Shader& shader, glm::mat4& projection)
+  {
+    m_shader = shader;
+
+    m_shader.use();
+    m_shader.setVec3("objectColor", 1.0f, 1.0f, 1.0f);
+    m_shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+    m_shader.setVec3("lightPos", glm::vec3(0, 0, 0));
+    m_shader.setInt("intensity", 1);
+
+    // pass projection matrix to shader (note that in this case it could change every frame)
+    m_shader.setMat4("projection", projection);
+  }
   
   void setVertices(const std::vector<float>& m_vertices)
   {
     this->m_vertices = m_vertices;
+  }
+
+  void setVertices(const float* vertices, int vals)
+  {
+    this->m_vertices = std::vector<float>(vertices, vertices + vals);
   }
 
   Shader& getShader()

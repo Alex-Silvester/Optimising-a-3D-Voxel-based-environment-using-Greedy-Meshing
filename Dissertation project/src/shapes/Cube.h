@@ -10,10 +10,6 @@ public:
 
 	Cube()
 	{
-		for (int i = 0; i < 6; i++)
-		{
-			faces[i] = new Rect();
-		}
 	}
 
 	void initialise(glm::mat4& projection) override
@@ -21,6 +17,32 @@ public:
 		for (int i = 0; i < 6; i++)
 		{
 			faces[i]->initialise(projection);
+		}
+
+		faces[0]->setPosition({ -0.5,0,0 });
+		faces[0]->setFacing(Axis_t::X, true);
+
+		faces[1]->setPosition({ 0.5,0,0 });
+		faces[1]->setFacing(Axis_t::X);
+
+		faces[2]->setPosition({ 0,-0.5,0 });
+		faces[2]->setFacing(Axis_t::Y);
+
+		faces[3]->setPosition({ 0,0.5,0 });
+		faces[3]->setFacing(Axis_t::Y, true);
+
+		faces[4]->setPosition({ 0,0,-0.5 });
+		faces[4]->setFacing(Axis_t::Z, true);
+
+		faces[5]->setPosition({ 0,0,0.5 });
+		faces[5]->setFacing(Axis_t::Z);
+	}
+
+	void initialise(glm::mat4& projection, Shader& shader) override
+	{
+		for (int i = 0; i < 6; i++)
+		{
+			faces[i]->initialise(projection, shader);
 		}
 
 		faces[0]->setPosition({ -0.5,0,0 });
@@ -66,6 +88,6 @@ private:
 
 private:
 
-	std::array<Rect*, 6> faces;
+	std::array<Rect*, 6> faces = {new Rect(), new Rect(), new Rect(), new Rect(), new Rect(), new Rect()};
 
 };
