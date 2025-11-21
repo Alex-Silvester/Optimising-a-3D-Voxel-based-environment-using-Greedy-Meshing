@@ -2,8 +2,9 @@
 
 #include "../Interfaces/IDrawable.h"
 
-enum Axis
+enum Axis_t
 {
+	EMPTY = 0,
 	X = 0b001,
 	Y = 0b010,
 	Z = 0b100
@@ -14,7 +15,7 @@ class Rect : public IDrawable
 private:
 	struct axis_type
 	{
-		axis_type(Axis axis)
+		axis_type(Axis_t axis)
 		{
 			x = ~(axis % 2);
 			y = ~((axis >> 1) % 2);
@@ -26,6 +27,8 @@ private:
 		unsigned int z : 1;
 	};
 public:
+
+	Rect() = default;
 
 	void initialise(glm::mat4& projection) override
 	{ 
@@ -50,10 +53,10 @@ public:
 			projection);
 	}
 
-
-	void setFacing(Axis facing_axis)
+	void setFacing(Axis_t facing_axis)
 	{
-		axis_type axis = facing_axis;		
+		axis_type axis = facing_axis;	
+		m_current_axis = facing_axis;
 
 		setVertices({
 					0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f)* axis.z,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f,
@@ -66,6 +69,8 @@ public:
 			});
 	}
 
-private:
+	Axis_t getAxis() const { return m_current_axis; }
 
+private:
+	Axis_t m_current_axis;
 };
