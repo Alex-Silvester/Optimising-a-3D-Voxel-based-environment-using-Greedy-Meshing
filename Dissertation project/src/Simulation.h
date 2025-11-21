@@ -26,11 +26,13 @@ private:
 
 	DrawWindow m_window;
 
-	Cube test_cube;
+	std::vector<Cube> cubes;
 
 	Axis x_axis = Axis(Axis_t::X);
 	Axis y_axis = Axis(Axis_t::Y);
 	Axis z_axis = Axis(Axis_t::Z);
+
+	const int m_world_size = 50;
 
 };
 
@@ -38,14 +40,22 @@ bool Simulation::init()
 {
 	m_window.initialise();
 
-	glm::mat4 projection = glm::perspective(glm::radians(m_window.getCamera().Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+	glm::mat4 projection = glm::perspective(
+		glm::radians(m_window.getCamera().Zoom), 
+		(float)SCREEN_WIDTH / (float)SCREEN_HEIGHT,
+		0.1f, 
+		100.0f);
 
-	test_cube.initialise(projection);
-	test_cube.setPosition({ 0,0,2 });
-
-	x_axis.addFaces({ test_cube });
-	y_axis.addFaces({ test_cube });
-	z_axis.addFaces({ test_cube });
+	auto begin_time = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < m_world_size*m_world_size; i++)
+	{
+		cubes.emplace_back();
+		cubes.back().initialise(projection);
+		cubes.back().setPosition({ i/m_world_size, 0, i%m_world_size });
+	}
+	x_axis.addFaces(cubes);
+	y_axis.addFaces(cubes);
+	z_axis.addFaces(cubes);
 
 	return true;
 }

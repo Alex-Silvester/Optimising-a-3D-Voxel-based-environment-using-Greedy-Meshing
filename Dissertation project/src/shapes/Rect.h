@@ -53,20 +53,35 @@ public:
 			projection);
 	}
 
-	void setFacing(Axis_t facing_axis)
+	void setFacing(Axis_t facing_axis, bool reverse_winding = false)
 	{
 		axis_type axis = facing_axis;	
 		m_current_axis = facing_axis;
 
-		setVertices({
-					0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f)* axis.z,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f,
-				 -0.5f * axis.x,   0.5f * axis.y,  0.5f                   * axis.z,   0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
-				 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f)* axis.z,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
-																			 
-				 -0.5f * axis.x,  -0.5f * axis.y, (axis.x ? -0.5f :  0.5f)* axis.z,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
-					0.5f * axis.x,  -0.5f * axis.y, -0.5f * axis.z,                      0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
-					0.5f * axis.x,   0.5f * axis.y, (axis.x ?  0.5f : -0.5f)* axis.z,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f
-			});
+		if(reverse_winding)
+		{
+			setVertices({
+						0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f) * axis.z,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f,
+					 -0.5f * axis.x,   0.5f * axis.y,  0.5f * axis.z                   ,   0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
+					 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f) * axis.z,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
+
+					 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f) * axis.z,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
+						0.5f * axis.x,  -0.5f * axis.y, -0.5f * axis.z,                      0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
+						0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f) * axis.z,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f
+				});
+		}
+		else
+		{
+			setVertices({
+						0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f) * axis.z,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f,
+						0.5f * axis.x,  -0.5f * axis.y, -0.5f * axis.z,                      0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
+					 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f) * axis.z,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
+					 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f) * axis.z,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
+					 -0.5f * axis.x,   0.5f * axis.y,  0.5f * axis.z                   ,   0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
+						0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f) * axis.z,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f,
+
+				});
+		}
 	}
 
 	Axis_t getAxis() const { return m_current_axis; }

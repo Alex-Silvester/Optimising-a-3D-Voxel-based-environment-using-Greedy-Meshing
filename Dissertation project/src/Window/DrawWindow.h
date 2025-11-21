@@ -26,8 +26,8 @@ public:
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_CULL_FACE);
-    //glFrontFace(GL_CW);
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CW);
     glEnable(GL_MULTISAMPLE);
 
     glGenVertexArrays(1, &VAO);
@@ -48,6 +48,8 @@ public:
     // normal attribute
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
+
+    return true;
   }
 
   const Camera& getCamera() const
