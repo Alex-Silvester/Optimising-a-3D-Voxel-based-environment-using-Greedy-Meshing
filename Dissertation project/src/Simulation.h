@@ -2,7 +2,8 @@
 
 #include <thread>
 #include <atomic>
-#include <chrono>
+
+#include "Timer.h"
 
 #include "Window/WindowBase.h"
 #include "Window/DrawWindow.h"
@@ -15,6 +16,11 @@ public:
 
 	Simulation()
 	{
+		projection = glm::perspective(
+			glm::radians(m_window.getCamera().Zoom),
+			(float)SCREEN_WIDTH / (float)SCREEN_HEIGHT,
+			0.1f,
+			100.0f);
 	}
 
 	bool init();
@@ -26,7 +32,51 @@ private:
 
 	void render();
 
-	void displayFPS();
+	void displayFPS()
+	{
+		while (m_window_open)
+		{
+			std::string display_text = "\x1b[1A\x1b[2K";
+			display_text += std::to_string(1.f / m_fps);
+			std::cout << display_text << std::endl;
+		}
+	}
+
+	inline void worldCreation()
+	{
+		//timing the world creation
+		Timer<std::nano> timer;
+		timer.Start();
+
+		cube_shader.init(
+			"Data/shaders/vertex/vertex_shader.txt",
+			"Data/shaders/fragment/fragment_shader.txt");
+
+		//initialising the world
+		for (int i = 0; i < m_world_size * m_world_size; i++)
+		{
+			cubes.emplace_back(projection, glm::vec3{ i / m_world_size,0,i % m_world_size }, cube_shader);
+		}
+
+		//ending the world creation time
+		printf("Creation time: ");
+		std::cout << std::to_string(timer.End()) << std::endl;
+	}
+
+	inline void axesSplitting()
+	{
+		Timer<std::nano> timer;
+
+		//timing the initialisation of the axes
+		timer.Start();
+		x_axis.addFaces(cubes);
+		y_axis.addFaces(cubes);
+		z_axis.addFaces(cubes);
+
+		printf("Axes splitting time: ");
+		std::cout << std::to_string(timer.End()) << std::endl;
+		printf("\n");
+	}
 
 private:
 
@@ -42,8 +92,10 @@ private:
 	Axis z_axis = Axis(Axis_t::Z);
 
 
-	std::atomic<long long> m_fps = 0;
+	std::atomic<double> m_fps = 0;
 	std::atomic<bool> m_window_open = true;
+
+	glm::mat4 projection;
 
 };
 
@@ -52,67 +104,23 @@ bool Simulation::init()
 	//initialise the window
 	m_window.initialise();
 
-	//iniitialise the projection matrix
-	glm::mat4 projection = glm::perspective(
-		glm::radians(m_window.getCamera().Zoom), 
-		(float)SCREEN_WIDTH / (float)SCREEN_HEIGHT,
-		0.1f, 
-		100.0f);
+	worldCreation();
 
-	//timing the world creation
-	auto begin_time = std::chrono::high_resolution_clock::now();
-
-	cube_shader.init(
-		"Data/shaders/vertex/vertex_shader.txt",
-		"Data/shaders/fragment/fragment_shader.txt");
-
-	//initialising the world
-	for (int i = 0; i < m_world_size*m_world_size; i++)
-	{
-		cubes.emplace_back();
-		cubes[i].initialise(projection, cube_shader);
-		cubes[i].setPosition({i / m_world_size, 0, i % m_world_size});
-	}
-
-	//ending the world creation time
-	auto end_time = std::chrono::high_resolution_clock::now();
-	m_fps = std::chrono::duration<long long, std::nano>(end_time - begin_time).count();
-
-	printf("Creation time: ");
-	std::cout << std::to_string(m_fps/1000000000.f) << std::endl;
-
-	//timing the initialisation of the axes
-	begin_time = std::chrono::high_resolution_clock::now();
-	x_axis.addFaces(cubes);
-	y_axis.addFaces(cubes);
-	z_axis.addFaces(cubes);
-	end_time = std::chrono::high_resolution_clock::now();
-	m_fps = std::chrono::duration<long long, std::nano>(end_time - begin_time).count();
-
-	printf("Axes splitting time: ");
-	std::cout << std::to_string(m_fps/1000000000.f) << std::endl;
-	printf("\n");
+	axesSplitting();
 
 	return true;
 }
 
-void Simulation::displayFPS()
-{
-	while (m_window_open) 
-	{
-		std::string display_text = "\x1b[1A\x1b[2K";
-		display_text += std::to_string(1000000000.f/m_fps);
-		std::cout  << display_text << std::endl;
-	}
-}
-
 void Simulation::run()
 {
+	//create a separate thread for the FPS count to not 
+	// interfere too much with the simulation loop
 	std::thread fps_thread([this] { displayFPS(); });
 
+	Timer<std::nano> timer;
 	while (m_window.open())
 	{
-		auto begin_time = std::chrono::high_resolution_clock::now();
+		timer.Start();
 
 		m_window.pollEvents();
 
@@ -124,10 +132,8 @@ void Simulation::run()
 
 		m_window.display();
 
-		auto end_time = std::chrono::high_resolution_clock::now();
-
 		//Getting the number of nanoseconds that have passed
-		m_fps = std::chrono::duration<long long, std::nano>(end_time - begin_time).count();
+		m_fps = timer.End();
 	}
 	m_window_open = false;
 
