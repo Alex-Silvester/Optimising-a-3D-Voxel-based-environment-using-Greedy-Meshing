@@ -55,7 +55,7 @@ private:
 		//initialising the world
 		for (int i = 0; i < m_world_size * m_world_size; i++)
 		{
-			cubes.emplace_back(projection, glm::vec3{ i / m_world_size,0,i % m_world_size }, cube_shader);
+			cubes.emplace_back(projection, glm::vec3{ i / m_world_size,0,i % m_world_size }, &cube_shader);
 		}
 
 		//ending the world creation time

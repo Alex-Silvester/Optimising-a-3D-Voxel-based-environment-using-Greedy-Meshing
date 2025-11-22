@@ -56,7 +56,7 @@ public:
 			projection);
 	}
 
-	void initialise(glm::mat4& projection, Shader& shader) override
+	void initialise(glm::mat4& projection, Shader* shader) override
 	{
 		//left = positive-x
 		//up = positive-y

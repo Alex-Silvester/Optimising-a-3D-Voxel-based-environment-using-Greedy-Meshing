@@ -26,7 +26,7 @@ public:
 	}
 
 	void initialise(glm::mat4& projection) override {}
-	void initialise(glm::mat4& projection, Shader& shader) override {}
+	void initialise(glm::mat4& projection, Shader* shader) override {}
 
 	void addFaces(std::vector<Rect*> faces)
 	{

@@ -12,7 +12,7 @@ public:
 	{
 	}
 
-	Cube(glm::mat4& projection, const glm::vec3& position, Shader& shader)
+	Cube(glm::mat4& projection, const glm::vec3& position, Shader* shader)
 	{
 		initialiseFaces(projection, shader);
 		setPosition(position);
@@ -29,7 +29,7 @@ public:
 		initialiseFaces(projection);
 	}
 
-	void initialise(glm::mat4& projection, Shader& shader) override
+	void initialise(glm::mat4& projection, Shader* shader) override
 	{
 		initialiseFaces(projection, shader);
 	}
@@ -56,7 +56,7 @@ private:
 		}
 	}
 
-	void initialiseFaces(glm::mat4& projection, Shader& shader)
+	void initialiseFaces(glm::mat4& projection, Shader* shader)
 	{
 		faces[0]->initialise(projection, shader);
 		faces[0]->setPosition({ -0.5,0,0 });
