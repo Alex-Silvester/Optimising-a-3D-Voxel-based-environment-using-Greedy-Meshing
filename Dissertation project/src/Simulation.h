@@ -53,9 +53,12 @@ private:
 			"Data/shaders/fragment/fragment_shader.txt");
 
 		//initialising the world
-		for (int i = 0; i < m_world_size * m_world_size; i++)
+		for (int i = 0; i < m_world_size.x * m_world_size.y * m_world_size.z; i++)
 		{
-			cubes.emplace_back(projection, glm::vec3{ i / m_world_size,0,i % m_world_size }, &cube_shader);
+			cubes.emplace_back(
+				projection, 
+				glm::vec3{ i / (m_world_size.y * m_world_size.z),(i / m_world_size.z) % m_world_size.y,i % m_world_size.z },
+				&cube_shader);
 		}
 
 		//ending the world creation time
@@ -82,7 +85,7 @@ private:
 
 	DrawWindow m_window;
 
-	static constexpr int m_world_size = 50;
+	static constexpr glm::vec<3, int> m_world_size = {20,5,20};
 	std::vector<Cube> cubes;
 
 	Shader cube_shader;
@@ -96,7 +99,6 @@ private:
 	std::atomic<bool> m_window_open = true;
 
 	glm::mat4 projection;
-
 };
 
 bool Simulation::init()
