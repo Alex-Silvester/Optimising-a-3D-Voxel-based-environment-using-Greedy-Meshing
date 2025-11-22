@@ -1,6 +1,8 @@
 #ifndef SHADER_H
 #define SHADER_H
 
+#define CHECK_ERRORS false
+
 #include <glm/glm.hpp>
 
 #include <string>
@@ -53,18 +55,30 @@ public:
     vertex = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertex, 1, &vShaderCode, NULL);
     glCompileShader(vertex);
+
+#if CHECK_ERRORS
     checkCompileErrors(vertex, "VERTEX");
+#endif
+
     // fragment Shader
     fragment = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragment, 1, &fShaderCode, NULL);
     glCompileShader(fragment);
+
+#if CHECK_ERRORS
     checkCompileErrors(fragment, "FRAGMENT");
+#endif
+
     // shader Program
     ID = glCreateProgram();
     glAttachShader(ID, vertex);
     glAttachShader(ID, fragment);
     glLinkProgram(ID);
+
+#if CHECK_ERRORS
     checkCompileErrors(ID, "PROGRAM");
+#endif 
+
     // delete the shaders as they're linked into our program now and no longer necessary
     glDeleteShader(vertex);
     glDeleteShader(fragment);
