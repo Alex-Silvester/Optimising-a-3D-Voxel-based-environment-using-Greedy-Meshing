@@ -85,14 +85,14 @@ private:
 
 	DrawWindow m_window;
 
-	static constexpr glm::vec<3, int> m_world_size = {20,5,20};
+	static constexpr glm::vec<3, int> m_world_size = {3,3,3};
 	std::vector<Cube> cubes;
 
 	Shader cube_shader;
 
-	Axis x_axis = Axis(Axis_t::X);
-	Axis y_axis = Axis(Axis_t::Y);
-	Axis z_axis = Axis(Axis_t::Z);
+	Axis x_axis = Axis(Axis_t::X, m_world_size.x, m_world_size.y * m_world_size.z);
+	Axis y_axis = Axis(Axis_t::Y, m_world_size.y, m_world_size.z * m_world_size.x);
+	Axis z_axis = Axis(Axis_t::Z, m_world_size.z, m_world_size.x * m_world_size.y);
 
 
 	std::atomic<double> m_fps = 0;

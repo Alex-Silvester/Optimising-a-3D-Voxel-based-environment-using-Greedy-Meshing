@@ -100,8 +100,20 @@ public:
 		}
 	}
 
+	void setPosition(const glm::vec3& vec) override
+	{
+		m_rect_position = vec;
+		IDrawable::setPosition(vec);
+	}
+
+	const glm::vec3& getPosition() override
+	{
+		return m_rect_position;
+	}
+
 	Axis_t getAxis() const { return m_current_axis; }
 
 private:
 	Axis_t m_current_axis;
+	glm::vec3 m_rect_position;
 };

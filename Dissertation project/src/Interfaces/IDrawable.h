@@ -97,6 +97,28 @@ public:
     }
   }
 
+  virtual const glm::vec3& getPosition()
+  {
+    return m_position;
+  }
+
+  glm::vec3 getCenter()
+  {
+    glm::vec3 return_val;
+    int acc = 0;
+    for (int i = 0; i < m_vertices.size(); i++)
+    {
+      if (i % 9 == 2)
+      {
+        return_val += glm::vec3{m_vertices[i - 2], m_vertices[i - 1], m_vertices[i]};
+        acc++;
+      }
+    }
+
+    return_val /= acc;
+
+    return return_val;
+  }
 
 private:
 

@@ -4,6 +4,8 @@
 #include "../camera.h"
 #include "../Interfaces/IDrawable.h"
 
+#define CULL_FACES true
+
 class DrawWindow : public WindowBase
 {
 public:
@@ -26,8 +28,12 @@ public:
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
+
+#if CULL_FACES
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CW);
+#endif
+
     glEnable(GL_MULTISAMPLE);
 
     glGenVertexArrays(1, &VAO);
