@@ -106,7 +106,7 @@ public:
 		IDrawable::setPosition(vec);
 	}
 
-	const glm::vec3& getPosition() override
+	const glm::vec3& getPosition() const override
 	{
 		return m_rect_position;
 	}

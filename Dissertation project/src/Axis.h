@@ -31,22 +31,40 @@ public:
 	void addFaces(std::vector<Cube>& voxels)
 	{
 		using namespace std::ranges::views;
+
+		std::vector<Rect*> temp_faces;
 		for (Cube& voxel : voxels)
 		{
 			faces.append_range(voxel.getFaces() | filter([this](Rect* face) {return face->getAxis() == m_axis; }));
 		}
 
-		faces.erase(std::remove_if(faces.begin(), faces.end(), [this](Rect* face) {return removedCoveredFaces(face); }), faces.end());
-	}
+		std::sort(faces.begin(), faces.end(), [this](Rect* face_a, Rect* face_b) {return faceSorter(face_a, face_b); });
 
-	bool removedCoveredFaces(Rect* face)
-	{
-		float pos = m_axis == X ? face->getPosition().x : (m_axis == Y ? face->getPosition().y : face->getPosition().z);
-
-		return pos > 0.f && pos < axis_size - 1.f;
+		int i = 0;
+		faces.erase(std::remove_if(faces.begin(), faces.end(), [this, &i](Rect* face) {return removedCoveredFaces(face, i); }), faces.end());
 	}
 
 private:
+
+	float axis_pos(const Rect* face) const
+	{
+		return m_axis == X ? face->getPosition().x : (m_axis == Y ? face->getPosition().y : face->getPosition().z);
+	}
+
+	bool faceSorter(const Rect* face_a, const Rect* face_b) const
+	{
+		float pos_a = axis_pos(face_a);
+		float pos_b = axis_pos(face_b);
+
+		return pos_a < pos_b;
+	}
+
+	bool removedCoveredFaces(const Rect* face, int& i) const
+	{
+		bool temp = i > axis_area-1 && i < faces.size() - axis_area;
+		i++;
+		return temp;
+	}
 
 	void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window) override
 	{

@@ -97,7 +97,7 @@ public:
     }
   }
 
-  virtual const glm::vec3& getPosition()
+  virtual const glm::vec3& getPosition() const
   {
     return m_position;
   }
@@ -118,6 +118,16 @@ public:
     return_val /= acc;
 
     return return_val;
+  }
+
+  void setLayer(int new_layer)
+  {
+    layer = new_layer;
+  }
+
+  int getLayer()
+  {
+    return layer;
   }
 
 private:
@@ -152,4 +162,6 @@ private:
   Shader* m_shader = nullptr;
 
   glm::vec3 m_scale = { 1.0f , 1.0f, 1.0f };
+
+  int layer = 0;
 };
