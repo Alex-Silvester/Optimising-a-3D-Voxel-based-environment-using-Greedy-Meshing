@@ -10,6 +10,8 @@
 
 #include "shapes/Cube.h"
 
+#define FACE_CULL false
+
 
 class Axis : public IDrawable
 {
@@ -38,9 +40,11 @@ public:
 			faces.append_range(voxel.getFaces() | filter([this](Rect* face) {return face->getAxis() == m_axis; }));
 		}
 
+#if FACE_CULL
 		std::sort(faces.begin(), faces.end(), [this](Rect* face_a, Rect* face_b) {return faceSorter(face_a, face_b); });
 
 		faces.erase(std::remove_if(faces.begin(), faces.end(), [this](Rect* face) {return removedCoveredFaces(face); }), faces.end());
+#endif
 	}
 
 private:

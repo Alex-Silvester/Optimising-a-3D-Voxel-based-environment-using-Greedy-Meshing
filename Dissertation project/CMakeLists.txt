@@ -40,7 +40,9 @@ add_executable (${PROJECT_NAME} "main.cpp"
 "src/shapes/triangle.h" 
 "src/shapes/Rect.h"
 "src/shapes/Cube.h"  
-"src/Axis.h" "src/Timer.h")
+"src/Axis.h" 
+"src/Timer.h"
+"src/Noise/PerlinNoise.h")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)

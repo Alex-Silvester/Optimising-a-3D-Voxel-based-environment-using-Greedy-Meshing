@@ -7,8 +7,8 @@
 
 #include "Window/WindowBase.h"
 #include "Window/DrawWindow.h"
-#include "shapes/triangle.h"
 #include "Axis.h"
+#include "Noise/PerlinNoise.h"
 
 class Simulation
 {
@@ -42,29 +42,7 @@ private:
 		}
 	}
 
-	inline void worldCreation()
-	{
-		//timing the world creation
-		Timer<std::nano> timer;
-		timer.Start();
-
-		cube_shader.init(
-			"Data/shaders/vertex/vertex_shader.txt",
-			"Data/shaders/fragment/fragment_shader.txt");
-
-		//initialising the world
-		for (int i = 0; i < m_world_size.x * m_world_size.y * m_world_size.z; i++)
-		{
-			cubes.emplace_back(
-				projection, 
-				glm::vec3{ i / (m_world_size.y * m_world_size.z),(i / m_world_size.z) % m_world_size.y,i % m_world_size.z },
-				&cube_shader);
-		}
-
-		//ending the world creation time
-		printf("Creation time: ");
-		std::cout << std::to_string(timer.End()) << std::endl;
-	}
+	inline void worldCreation();
 
 	inline void axesSplitting()
 	{
@@ -85,7 +63,7 @@ private:
 
 	DrawWindow m_window;
 
-	static constexpr glm::vec<3, int> m_world_size = {3,3,3};
+	static constexpr glm::vec<3, int> m_world_size = {50,5,50};
 	std::vector<Cube> cubes;
 
 	Shader cube_shader;
@@ -152,4 +130,36 @@ void Simulation::render()
 	m_window.draw(x_axis);
 	m_window.draw(y_axis);
 	m_window.draw(z_axis);
+}
+
+void Simulation::worldCreation()
+{
+	Noise::PerlinNoise& noise_gen = Noise::PerlinNoise::noise();
+
+	//timing the world creation
+	Timer<std::nano> timer;
+	timer.Start();
+
+	cube_shader.init(
+		"Data/shaders/vertex/vertex_shader.txt",
+		"Data/shaders/fragment/fragment_shader.txt");
+
+	//initialising the world
+	for (int i = 0; i < m_world_size.x * m_world_size.y * m_world_size.z; i++)
+	{
+		glm::vec3 pos = glm::vec3{ i / (m_world_size.y * m_world_size.z),(i / m_world_size.z) % m_world_size.y,i % m_world_size.z };
+		float noise_eval = noise_gen.eval(glm::normalize(pos));
+		noise_eval = std::fabsf(std::isnan(noise_eval) ? 0 : noise_eval);
+
+		if (noise_eval > 0.2f) continue;
+
+		cubes.emplace_back(
+			projection,
+			pos,
+			&cube_shader);
+	}
+
+	//ending the world creation time
+	printf("Creation time: ");
+	std::cout << std::to_string(timer.End()) << std::endl;
 }
