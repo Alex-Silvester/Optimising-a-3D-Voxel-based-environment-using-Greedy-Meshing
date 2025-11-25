@@ -40,8 +40,7 @@ public:
 
 		std::sort(faces.begin(), faces.end(), [this](Rect* face_a, Rect* face_b) {return faceSorter(face_a, face_b); });
 
-		int i = 0;
-		faces.erase(std::remove_if(faces.begin(), faces.end(), [this, &i](Rect* face) {return removedCoveredFaces(face, i); }), faces.end());
+		faces.erase(std::remove_if(faces.begin(), faces.end(), [this](Rect* face) {return removedCoveredFaces(face); }), faces.end());
 	}
 
 private:
@@ -59,11 +58,11 @@ private:
 		return pos_a < pos_b;
 	}
 
-	bool removedCoveredFaces(const Rect* face, int& i) const
+	//returns true if the face is covered and shouldn't be shown
+	bool removedCoveredFaces(const Rect* face) const
 	{
-		bool temp = i > axis_area-1 && i < faces.size() - axis_area;
-		i++;
-		return temp;
+		float pos = axis_pos(face);
+		return pos > 0.f && pos < axis_size - 1;
 	}
 
 	void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window) override
