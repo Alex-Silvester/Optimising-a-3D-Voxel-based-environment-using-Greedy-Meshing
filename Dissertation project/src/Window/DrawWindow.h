@@ -63,6 +63,11 @@ public:
     return camera;
   }
 
+  bool paused()
+  {
+    return m_paused;
+  }
+
 private:
 
 	void mouseEvent(double xposIn, double yposIn)override
@@ -172,6 +177,27 @@ private:
     {
       tab_pressed = false;
     }
+
+    //Screen pause
+    if (keyPressed(GLFW_KEY_ENTER) && !enter_pressed)
+    {
+      enter_pressed = true;
+      m_paused = !m_paused;
+    }
+    if (keyReleased(GLFW_KEY_ENTER))
+    {
+      enter_pressed = false;
+    }
+  }
+
+  bool keyPressed(int key)
+  {
+    return glfwGetKey(m_window, key) == GLFW_PRESS;
+  }
+
+  bool keyReleased(int key)
+  {
+    return glfwGetKey(m_window, key) == GLFW_RELEASE;
   }
 
 private:
@@ -183,8 +209,11 @@ private:
   bool  space_pressed = false;
   bool tab_pressed = false;
   bool f5_pressed = false;
+  bool enter_pressed = false;
 
 	Camera camera{ glm::vec3(0.f, 0.f, 0.f) , {0.f,1.f,0.f}, 90.f, 0.f };
 
   unsigned int VAO = 0, VBO = 0;
+
+  bool m_paused = false;
 };

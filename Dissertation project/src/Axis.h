@@ -10,7 +10,7 @@
 
 #include "shapes/Cube.h"
 
-#define FACE_CULL false
+#define FACE_CULL true
 
 
 class Axis : public IDrawable
@@ -43,7 +43,9 @@ public:
 #if FACE_CULL
 		std::sort(faces.begin(), faces.end(), [this](Rect* face_a, Rect* face_b) {return faceSorter(face_a, face_b); });
 
-		faces.erase(std::remove_if(faces.begin(), faces.end(), [this](Rect* face) {return removedCoveredFaces(face); }), faces.end());
+		int i = 0;
+		faces.erase(std::remove_if(faces.begin(), faces.end(), [this,&i](Rect* face) {return removedCoveredFaces(face,i); }), faces.end());
+		std::println("");
 #endif
 	}
 
@@ -63,10 +65,25 @@ private:
 	}
 
 	//returns true if the face is covered and shouldn't be shown
-	bool removedCoveredFaces(const Rect* face) const
+	bool removedCoveredFaces(const Rect* face, int& face_pos) const
 	{
-		float pos = axis_pos(face);
-		return pos > 0.f && pos < axis_size - 1;
+		glm::vec3 pos = face->getPosition();
+
+		for (int idx = 1; idx < faces.size(); idx++)
+		{
+			if (face == faces[idx]) 
+			{
+				continue;
+			}
+			else if (pos == faces[idx]->getPosition())
+			{
+				face_pos++;
+				return true;
+			}
+		}
+
+		face_pos++;
+		return false;
 	}
 
 	void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window) override

@@ -63,7 +63,7 @@ private:
 
 	DrawWindow m_window;
 
-	static constexpr glm::vec<3, int> m_world_size = {50,5,50};
+	static constexpr glm::vec<3, int> m_world_size = {20,20,20};
 	std::vector<Cube> cubes;
 
 	Shader cube_shader;
@@ -104,6 +104,8 @@ void Simulation::run()
 
 		m_window.pollEvents();
 
+		if (m_window.paused()) continue;
+
 		update();
 
 		m_window.clear();
@@ -132,6 +134,8 @@ void Simulation::render()
 	m_window.draw(z_axis);
 }
 
+#define USE_NOISE true
+
 void Simulation::worldCreation()
 {
 	Noise::PerlinNoise& noise_gen = Noise::PerlinNoise::noise();
@@ -148,10 +152,13 @@ void Simulation::worldCreation()
 	for (int i = 0; i < m_world_size.x * m_world_size.y * m_world_size.z; i++)
 	{
 		glm::vec3 pos = glm::vec3{ i / (m_world_size.y * m_world_size.z),(i / m_world_size.z) % m_world_size.y,i % m_world_size.z };
+
+#if USE_NOISE
 		float noise_eval = noise_gen.eval(glm::normalize(pos));
 		noise_eval = std::fabsf(std::isnan(noise_eval) ? 0 : noise_eval);
 
 		if (noise_eval > 0.2f) continue;
+#endif
 
 		cubes.emplace_back(
 			projection,
