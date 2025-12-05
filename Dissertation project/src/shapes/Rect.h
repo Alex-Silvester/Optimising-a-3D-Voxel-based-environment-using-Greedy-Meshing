@@ -2,11 +2,23 @@
 
 #include "../Interfaces/IDrawable.h"
 
-enum Axis
+enum Axis_t
 {
+	EMPTY = 0,
 	X = 0b001,
 	Y = 0b010,
 	Z = 0b100
+};
+
+static const int default_sqaure_vals = 54;
+static const float default_square[default_sqaure_vals] = {
+    0.5f, 0.5f, 0.f,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f,
+   -0.5f, 0.5f, 0.f,   0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
+   -0.5f,-0.5f, 0.f,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
+
+   -0.5f,-0.5f, 0.f,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
+    0.5f,-0.5f, 0.f,   0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
+    0.5f, 0.5f, 0.f,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f
 };
 
 class Rect : public IDrawable
@@ -14,7 +26,7 @@ class Rect : public IDrawable
 private:
 	struct axis_type
 	{
-		axis_type(Axis axis)
+		axis_type(Axis_t axis)
 		{
 			x = ~(axis % 2);
 			y = ~((axis >> 1) % 2);
@@ -27,6 +39,8 @@ private:
 	};
 public:
 
+	Rect() = default;
+
 	void initialise(glm::mat4& projection) override
 	{ 
 		//left = positive-x
@@ -34,15 +48,7 @@ public:
 		//back = positive-z
 
 		//1.0 parts wide
-		setVertices({
-				0.5f, 0.5f, 0.f,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f, 
-			 -0.5f, 0.5f, 0.f,   0.f, 1.f, 0.f,   0.f, 0.f, 0.f, 
-			 -0.5f,-0.5f, 0.f,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f, 
-
-			 -0.5f,-0.5f, 0.f,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
-				0.5f,-0.5f, 0.f,   0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
-				0.5f, 0.5f, 0.f,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f
-			});
+		setVertices(default_square, default_sqaure_vals);
 
 		setShader(
 			"Data/shaders/vertex/vertex_shader.txt",
@@ -50,22 +56,64 @@ public:
 			projection);
 	}
 
-
-	void setFacing(Axis facing_axis)
+	void initialise(glm::mat4& projection, Shader* shader) override
 	{
-		axis_type axis = facing_axis;		
+		//left = positive-x
+		//up = positive-y
+		//back = positive-z
 
-		setVertices({
-					0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f)* axis.z,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f,
-				 -0.5f * axis.x,   0.5f * axis.y,  0.5f                   * axis.z,   0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
-				 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f)* axis.z,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
-																			 
-				 -0.5f * axis.x,  -0.5f * axis.y, (axis.x ? -0.5f :  0.5f)* axis.z,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
-					0.5f * axis.x,  -0.5f * axis.y, -0.5f * axis.z,                      0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
-					0.5f * axis.x,   0.5f * axis.y, (axis.x ?  0.5f : -0.5f)* axis.z,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f
-			});
+		//1.0 parts wide
+		setVertices(default_square, default_sqaure_vals);
+
+		setShader(shader,
+			projection);
 	}
 
-private:
+	void setFacing(Axis_t facing_axis, bool reverse_winding = false)
+	{
+		axis_type axis = facing_axis;	
+		m_current_axis = facing_axis;
 
+		if(reverse_winding)
+		{
+			setVertices({
+						0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f) * axis.z,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f,
+					 -0.5f * axis.x,   0.5f * axis.y,  0.5f * axis.z                   ,   0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
+					 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f) * axis.z,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
+
+					 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f) * axis.z,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
+						0.5f * axis.x,  -0.5f * axis.y, -0.5f * axis.z,                      0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
+						0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f) * axis.z,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f
+				});
+		}
+		else
+		{
+			setVertices({
+						0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f) * axis.z,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f,
+						0.5f * axis.x,  -0.5f * axis.y, -0.5f * axis.z,                      0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
+					 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f) * axis.z,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
+					 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f) * axis.z,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
+					 -0.5f * axis.x,   0.5f * axis.y,  0.5f * axis.z                   ,   0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
+						0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f) * axis.z,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f,
+
+				});
+		}
+	}
+
+	void setPosition(const glm::vec3& vec) override
+	{
+		m_rect_position = vec;
+		IDrawable::setPosition(vec);
+	}
+
+	const glm::vec3& getPosition() const override
+	{
+		return m_rect_position;
+	}
+
+	Axis_t getAxis() const { return m_current_axis; }
+
+private:
+	Axis_t m_current_axis;
+	glm::vec3 m_rect_position;
 };

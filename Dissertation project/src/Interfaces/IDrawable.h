@@ -1,6 +1,5 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <vector>
@@ -12,21 +11,41 @@ class IDrawable
 {
 public:
 
+  ~IDrawable()
+  {
+    delete m_shader;
+  }
+
   //default initialisation for the drawable object
   virtual void initialise(glm::mat4& projection) = 0;
+  virtual void initialise(glm::mat4& projection, Shader* shader) = 0;
 
   void setShader(const char* vertex_path, const char* fragment_path, glm::mat4& projection)
   {
-    m_shader.init(vertex_path, fragment_path);
+      m_shader->init(vertex_path, fragment_path);
 
-    m_shader.use();
-    m_shader.setVec3("objectColor", 1.0f, 1.0f, 1.0f);
-    m_shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-    m_shader.setVec3("lightPos", glm::vec3(0,0,0));
-    m_shader.setInt("intensity", 1);
+    m_shader->use();
+    m_shader->setVec3("objectColor", 1.0f, 1.0f, 1.0f);
+    m_shader->setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+    m_shader->setVec3("lightPos", glm::vec3(0,0,0));
+    m_shader->setInt("intensity", 1);
 
     // pass projection matrix to shader (note that in this case it could change every frame)
-    m_shader.setMat4("projection", projection);
+    m_shader->setMat4("projection", projection);
+  }
+
+  void setShader(Shader* shader, glm::mat4& projection)
+  {
+    m_shader = shader;
+
+    m_shader->use();
+    m_shader->setVec3("objectColor", 1.0f, 1.0f, 1.0f);
+    m_shader->setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+    m_shader->setVec3("lightPos", glm::vec3(0, 0, 0));
+    m_shader->setInt("intensity", 1);
+
+    // pass projection matrix to shader (note that in this case it could change every frame)
+    m_shader->setMat4("projection", projection);
   }
   
   void setVertices(const std::vector<float>& m_vertices)
@@ -34,9 +53,14 @@ public:
     this->m_vertices = m_vertices;
   }
 
+  void setVertices(const float* vertices, int vals)
+  {
+    this->m_vertices = std::vector<float>(vertices, vertices + vals);
+  }
+
   Shader& getShader()
   {
-    return m_shader;
+    return *m_shader;
   }
 
   const std::vector<float>& getVertices() const
@@ -73,6 +97,38 @@ public:
     }
   }
 
+  virtual const glm::vec3& getPosition() const
+  {
+    return m_position;
+  }
+
+  glm::vec3 getCenter()
+  {
+    glm::vec3 return_val;
+    int acc = 0;
+    for (int i = 0; i < m_vertices.size(); i++)
+    {
+      if (i % 9 == 2)
+      {
+        return_val += glm::vec3{m_vertices[i - 2], m_vertices[i - 1], m_vertices[i]};
+        acc++;
+      }
+    }
+
+    return_val /= acc;
+
+    return return_val;
+  }
+
+  void setLayer(int new_layer)
+  {
+    layer = new_layer;
+  }
+
+  int getLayer()
+  {
+    return layer;
+  }
 
 private:
 
@@ -80,10 +136,9 @@ private:
 	
 	virtual void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window)
   {
-    m_shader.use();
-
-    m_shader.setMat4("view", view);
-    m_shader.setVec3("position", m_position);
+    m_shader->use();
+    m_shader->setMat4("view", view);
+    m_shader->setVec3("position", m_position);
 
     // render
     glBindVertexArray(VAO);
@@ -95,7 +150,7 @@ private:
     // calculate the model matrix for each object and pass it to shader before drawing
     glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
     model = glm::translate(model, glm::vec3(0.f));
-    m_shader.setMat4("model", model);
+    m_shader->setMat4("model", model);
 
     glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
 	}
@@ -104,7 +159,9 @@ private:
 
   glm::vec3 m_position = { 0,0,0 };
 	std::vector<float> m_vertices;
-  Shader m_shader;
+  Shader* m_shader = nullptr;
 
   glm::vec3 m_scale = { 1.0f , 1.0f, 1.0f };
+
+  int layer = 0;
 };

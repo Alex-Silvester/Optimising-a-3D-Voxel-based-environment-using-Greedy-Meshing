@@ -34,7 +34,15 @@ add_executable (${PROJECT_NAME} "main.cpp"
 "src/Simulation.cpp" 
 "src/Window/WindowBase"
 "src/Window/DrawWindow.h" 
-"src/camera.h" "src/Interfaces/IDrawable.h" "src/shader.h" "src/shapes/triangle.h" "src/shapes/Rect.h" "src/shapes/Cube.h"  )
+"src/camera.h" 
+"src/Interfaces/IDrawable.h"
+"src/shader.h"
+"src/shapes/triangle.h" 
+"src/shapes/Rect.h"
+"src/shapes/Cube.h"  
+"src/Axis.h" 
+"src/Timer.h"
+"src/Noise/PerlinNoise.h")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
@@ -46,6 +54,7 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/Data/ DESTINATION ${CMAKE_CURRENT_BINARY_D
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
 	set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
+	message("-- Using C++23 --")
 endif()
 
 # TODO: Add tests and install targets if needed.
