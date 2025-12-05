@@ -10,6 +10,8 @@
 #include "Axis.h"
 #include "Noise/PerlinNoise.h"
 
+#define USE_NOISE true
+
 class Simulation
 {
 public:
@@ -50,6 +52,7 @@ private:
 
 		//timing the initialisation of the axes
 		timer.Start();
+
 		x_axis.addFaces(cubes);
 		y_axis.addFaces(cubes);
 		z_axis.addFaces(cubes);
@@ -71,7 +74,6 @@ private:
 	Axis x_axis = Axis(Axis_t::X, m_world_size.x, m_world_size.y * m_world_size.z);
 	Axis y_axis = Axis(Axis_t::Y, m_world_size.y, m_world_size.z * m_world_size.x);
 	Axis z_axis = Axis(Axis_t::Z, m_world_size.z, m_world_size.x * m_world_size.y);
-
 
 	std::atomic<double> m_fps = 0;
 	std::atomic<bool> m_window_open = true;
@@ -134,8 +136,6 @@ void Simulation::render()
 	m_window.draw(z_axis);
 }
 
-#define USE_NOISE true
-
 void Simulation::worldCreation()
 {
 	Noise::PerlinNoise& noise_gen = Noise::PerlinNoise::noise();
@@ -154,7 +154,7 @@ void Simulation::worldCreation()
 		glm::vec3 pos = glm::vec3{ i / (m_world_size.y * m_world_size.z),(i / m_world_size.z) % m_world_size.y,i % m_world_size.z };
 
 #if USE_NOISE
-		float noise_eval = noise_gen.eval(glm::normalize(pos));
+		float noise_eval = noise_gen.eval({ pos.x / m_world_size.x, pos.y / m_world_size.y, pos.z / m_world_size.z });
 		noise_eval = std::fabsf(std::isnan(noise_eval) ? 0 : noise_eval);
 
 		if (noise_eval > 0.2f) continue;

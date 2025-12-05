@@ -10,6 +10,7 @@
 
 #include "shapes/Cube.h"
 
+#define FACE_SORT false
 #define FACE_CULL true
 
 
@@ -37,15 +38,22 @@ public:
 		std::vector<Rect*> temp_faces;
 		for (Cube& voxel : voxels)
 		{
-			faces.append_range(voxel.getFaces() | filter([this](Rect* face) {return face->getAxis() == m_axis; }));
+			temp_faces.append_range(voxel.getFaces() | filter([this](Rect* face) {return face->getAxis() == m_axis; }));
 		}
 
-#if FACE_CULL
+#if FACE_SORT
 		std::sort(faces.begin(), faces.end(), [this](Rect* face_a, Rect* face_b) {return faceSorter(face_a, face_b); });
+#endif
 
-		int i = 0;
-		faces.erase(std::remove_if(faces.begin(), faces.end(), [this,&i](Rect* face) {return removedCoveredFaces(face,i); }), faces.end());
-		std::println("");
+#if FACE_CULL
+
+		//essentially making copy_if into move_if
+		std::copy_if(
+			std::make_move_iterator(temp_faces.begin()),
+			std::make_move_iterator(temp_faces.end()),
+			std::back_inserter(faces), 
+			[this, &temp_faces](Rect* face) {return !isFaceCovered(face, temp_faces); });
+
 #endif
 	}
 
@@ -65,24 +73,32 @@ private:
 	}
 
 	//returns true if the face is covered and shouldn't be shown
-	bool removedCoveredFaces(const Rect* face, int& face_pos) const
+	bool isFaceCovered(const Rect* face, const std::vector<Rect*>& other_faces) const
 	{
+		//if the face is on an edge, return early
+		float axis_check = axis_pos(face);
+		if (axis_check < 0 || axis_check > axis_size)
+		{
+			return false;
+		}
+
 		glm::vec3 pos = face->getPosition();
 
-		for (int idx = 1; idx < faces.size(); idx++)
+		//chec if the face os covered by another face
+		for (int idx = 0; idx < other_faces.size(); idx++)
 		{
-			if (face == faces[idx]) 
+			//if the current face is the same as the input face
+			if (face == other_faces[idx])
 			{
 				continue;
 			}
-			else if (pos == faces[idx]->getPosition())
+			
+			//if the current face's position is the same as the input face's position
+			if (pos == other_faces[idx]->getPosition())
 			{
-				face_pos++;
 				return true;
 			}
 		}
-
-		face_pos++;
 		return false;
 	}
 
