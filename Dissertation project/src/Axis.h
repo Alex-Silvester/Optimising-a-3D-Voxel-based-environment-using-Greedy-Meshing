@@ -90,19 +90,35 @@ private:
 		glm::vec3 pos = face->getPosition();
 
 		//chec if the face os covered by another face
-		for (int idx = 0; idx < other_faces.size(); idx++)
+		for (Rect* other_face : other_faces)
 		{
 			//if the current face is the same as the input face
-			if (face == other_faces[idx])
+			if (face == other_face)
 			{
 				continue;
 			}
-			
-			//if the current face's position is the same as the input face's position
-			if (pos == other_faces[idx]->getPosition())
+
+			const glm::vec3& other_face_pos = other_face->getPosition();
+
+
+			//using early returns to speed up comparing two vectors
+			// comparing two glm::vec3-s is slower than comparing two floats
+			if (other_face_pos.x != pos.x)
 			{
-				return true;
+				continue;
 			}
+
+			if (other_face_pos.y != pos.y)
+			{
+				continue;
+			}
+
+			if (other_face_pos.z != pos.z)
+			{
+				continue;
+			}
+
+			return true;
 		}
 		return false;
 	}
