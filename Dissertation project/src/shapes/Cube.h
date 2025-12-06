@@ -44,7 +44,7 @@ public:
 		faces[5]->setPosition(glm::vec3( 0, 0, 0.5 ) + pos);
 	}
 
-	const std::array<Rect*, 6>& getFaces() { return faces; }
+	const std::array<Rect*, 6>& getFaces() const { return faces; }
 
 private:
 

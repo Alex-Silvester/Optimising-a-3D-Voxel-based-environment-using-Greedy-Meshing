@@ -40,10 +40,10 @@ public:
 	void initialise(glm::mat4& projection) override {}
 	void initialise(glm::mat4& projection, Shader* shader) override {}
 
-	void addFaces(std::vector<Cube>& voxels)
+	void addFaces(const std::vector<Cube>& voxels)
 	{
 		std::vector<Rect*> temp_faces;
-		for (Cube& voxel : voxels)
+		for (const Cube& voxel : voxels)
 		{
 			std::move_if(voxel.getFaces().begin(), voxel.getFaces().end(), std::back_inserter(temp_faces),
 				[this](Rect* face) {return face->getAxis() == m_axis; });
