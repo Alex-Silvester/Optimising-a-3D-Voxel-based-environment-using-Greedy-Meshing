@@ -48,7 +48,15 @@ public:
 		for (const Cube& voxel : voxels)
 		{
 			std::move_if(voxel.getFaces().begin(), voxel.getFaces().end(), std::back_inserter(temp_faces),
-				[this](Rect* face) {return face->getAxis() == m_axis; });
+				[this](Rect* face) 
+				{
+					if (face->getAxis() == m_axis) 
+					{ 
+						face_position_cache.emplace_back(face->getPosition());
+						return true; 
+					}
+					return false; 
+				});
 		}
 
 #if FACE_SORT
@@ -59,17 +67,13 @@ public:
 
 		for (int i = 0; i < SEARCH_THREADS; i++)
 		{
-			thread_pool[i] = std::thread([this, i, temp_faces] { checkFaces(i, temp_faces, temp_vectors[i]); });
+			thread_pool[i] = std::move(std::thread([this, i, temp_faces] { checkFaces(i, temp_faces, temp_vectors[i]); }));
 		}
 
 		for (int i = 0; i < SEARCH_THREADS; i++)
 		{
 			thread_pool[i].join();
-		}
-
-		for (auto& vec : temp_vectors)
-		{
-			faces.insert(faces.end(), vec.begin(), vec.end());
+			faces.insert(faces.end(), std::make_move_iterator(temp_vectors[i].begin()), std::make_move_iterator(temp_vectors[i].end()));
 		}
 
 
@@ -113,36 +117,36 @@ private:
 		glm::vec3 pos = face->getPosition();
 
 		//chec if the face os covered by another face
-		for (Rect* other_face : other_faces)
+		for (int i = 0; i < other_faces.size(); i++)
 		{
 			//if the current face is the same as the input face
-			if (face == other_face)
+			if (face == other_faces[i])
 			{
 				continue;
 			}
 
-			const glm::vec3& other_face_pos = other_face->getPosition();
-
+			const glm::vec3& other_pos = face_position_cache[i];
 
 			//using early returns to speed up comparing two vectors
 			// comparing two glm::vec3-s is slower than comparing two floats
-			if (other_face_pos.x != pos.x)
+			if (other_pos.x != pos.x)
 			{
 				continue;
 			}
 
-			if (other_face_pos.y != pos.y)
+			if (other_pos.y != pos.y)
 			{
 				continue;
 			}
 
-			if (other_face_pos.z != pos.z)
+			if (other_pos.z != pos.z)
 			{
 				continue;
 			}
 
 			return true;
 		}
+
 		return false;
 	}
 
@@ -161,6 +165,7 @@ private:
 	int axis_size;
 	int axis_area;
 	std::vector<Rect*> faces;
+	std::vector<glm::vec3> face_position_cache;
 
 	std::array<std::thread, SEARCH_THREADS> thread_pool;
 	std::array<std::vector<Rect*>, SEARCH_THREADS> temp_vectors;

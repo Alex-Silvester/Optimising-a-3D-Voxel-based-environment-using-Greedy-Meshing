@@ -70,7 +70,7 @@ private:
 
 	DrawWindow m_window;
 
-	static constexpr glm::vec<3, int> m_world_size = {50,50,50};
+	static constexpr glm::vec<3, int> m_world_size = {50,20,50};
 	std::vector<Cube> cubes;
 
 	Shader cube_shader;
