@@ -14,6 +14,8 @@
 #define FACE_SORT false
 #define FACE_CULL true
 
+#define SEARCH_THREADS 20
+
 namespace std
 {
 	template< class InputIt, class OutputIt, class UnaryPred >
@@ -55,9 +57,21 @@ public:
 
 #if FACE_CULL
 
-		//essentially making copy_if into move_if
-		std::move_if(temp_faces.begin(), temp_faces.end(), std::back_inserter(faces), 
-			[this, &temp_faces](Rect* face) {return !isFaceCovered(face, temp_faces); });
+		for (int i = 0; i < SEARCH_THREADS; i++)
+		{
+			thread_pool[i] = std::thread([this, i, temp_faces] { checkFaces(i, temp_faces, temp_vectors[i]); });
+		}
+
+		for (int i = 0; i < SEARCH_THREADS; i++)
+		{
+			thread_pool[i].join();
+		}
+
+		for (auto& vec : temp_vectors)
+		{
+			faces.insert(faces.end(), vec.begin(), vec.end());
+		}
+
 
 #endif
 	}
@@ -75,6 +89,15 @@ private:
 		float pos_b = axis_pos(face_b);
 
 		return pos_a < pos_b;
+	}
+
+	void checkFaces(const int i, const std::vector<Rect*>& temp_faces, std::vector<Rect*>& new_vec)
+	{
+		int start = temp_faces.size() * (float)i / SEARCH_THREADS;
+		int end = temp_faces.size() * (float)(i + 1) / SEARCH_THREADS;
+
+		std::move_if(temp_faces.begin() + start, temp_faces.begin() + end, std::back_inserter(new_vec),
+			[this, &temp_faces](Rect* face) {return !isFaceCovered(face, temp_faces); });
 	}
 
 	//returns true if the face is covered and shouldn't be shown
@@ -138,4 +161,7 @@ private:
 	int axis_size;
 	int axis_area;
 	std::vector<Rect*> faces;
+
+	std::array<std::thread, SEARCH_THREADS> thread_pool;
+	std::array<std::vector<Rect*>, SEARCH_THREADS> temp_vectors;
 };
