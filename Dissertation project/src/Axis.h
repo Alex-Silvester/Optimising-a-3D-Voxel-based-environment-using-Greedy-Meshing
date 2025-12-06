@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <print>
 #include <algorithm>
 #include <ranges>
@@ -13,6 +14,14 @@
 #define FACE_SORT false
 #define FACE_CULL true
 
+namespace std
+{
+	template< class InputIt, class OutputIt, class UnaryPred >
+	inline void move_if(InputIt first, InputIt last, OutputIt d_first, UnaryPred pred)
+	{
+		std::copy_if(std::make_move_iterator(first), std::make_move_iterator(last), d_first, pred);
+	}
+}
 
 class Axis : public IDrawable
 {
@@ -33,12 +42,11 @@ public:
 
 	void addFaces(std::vector<Cube>& voxels)
 	{
-		using namespace std::ranges::views;
-
 		std::vector<Rect*> temp_faces;
 		for (Cube& voxel : voxels)
 		{
-			temp_faces.append_range(voxel.getFaces() | filter([this](Rect* face) {return face->getAxis() == m_axis; }));
+			std::move_if(voxel.getFaces().begin(), voxel.getFaces().end(), std::back_inserter(temp_faces),
+				[this](Rect* face) {return face->getAxis() == m_axis; });
 		}
 
 #if FACE_SORT
@@ -48,10 +56,7 @@ public:
 #if FACE_CULL
 
 		//essentially making copy_if into move_if
-		std::copy_if(
-			std::make_move_iterator(temp_faces.begin()),
-			std::make_move_iterator(temp_faces.end()),
-			std::back_inserter(faces), 
+		std::move_if(temp_faces.begin(), temp_faces.end(), std::back_inserter(faces), 
 			[this, &temp_faces](Rect* face) {return !isFaceCovered(face, temp_faces); });
 
 #endif
