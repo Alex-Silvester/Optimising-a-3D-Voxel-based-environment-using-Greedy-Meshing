@@ -68,6 +68,32 @@ public:
     return m_vertices;
 	}
 
+  std::vector<float> getVerticesWithPosition() const
+  {
+    std::vector<float> global_vertices;
+    for (int i = 0; i < m_vertices.size(); i++)
+    {
+      if (i % 9 == 0)
+      {
+        global_vertices.emplace_back(m_vertices[i] + m_position.x);
+      }
+      else if (i % 9 == 1)
+      {
+        global_vertices.emplace_back(m_vertices[i] + m_position.y);
+      }
+      else if (i % 9 == 2)
+      {
+        global_vertices.emplace_back(m_vertices[i] + m_position.z);
+      }
+      else
+      {
+        global_vertices.emplace_back(m_vertices[i]);
+      }
+    }
+
+    return global_vertices;
+  }
+
   virtual void setPosition(const glm::vec3& pos)
   {
     m_position = pos;

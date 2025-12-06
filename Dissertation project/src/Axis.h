@@ -13,6 +13,7 @@
 
 #define FACE_SORT false
 #define FACE_CULL true
+#define USE_INSTANCING true
 
 #define SEARCH_THREADS 20
 
@@ -76,6 +77,13 @@ public:
 			faces.insert(faces.end(), std::make_move_iterator(temp_vectors[i].begin()), std::make_move_iterator(temp_vectors[i].end()));
 		}
 
+#if USE_INSTANCING
+		for (auto& face : faces)
+		{
+			std::vector<float> global_vertices = face->getVerticesWithPosition();
+			m_instanced_vertices.insert(m_instanced_vertices.end(), std::make_move_iterator(global_vertices.begin()), std::make_move_iterator(global_vertices.end()));
+		}
+#endif
 
 #endif
 	}
@@ -152,11 +160,15 @@ private:
 
 	void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window) override
 	{
+#if USE_INSTANCING == false
 		for (Rect* face : faces)
 		{
 			if (face == nullptr) continue;
 			window.draw(*face);
 		}
+#else
+		window.draw(m_instanced_vertices, &faces[0]->getShader());
+#endif
 	}
 
 private:
@@ -169,4 +181,6 @@ private:
 
 	std::array<std::thread, SEARCH_THREADS> thread_pool;
 	std::array<std::vector<Rect*>, SEARCH_THREADS> temp_vectors;
+
+	std::vector<float> m_instanced_vertices;
 };

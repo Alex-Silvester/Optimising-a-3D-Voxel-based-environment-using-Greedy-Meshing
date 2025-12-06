@@ -18,6 +18,29 @@ public:
     drawable.draw(VAO, VBO, view, *this);
   }
 
+  void draw(const std::vector<float>& vertices, Shader* shader)
+  {
+    glm::mat4 view = camera.GetViewMatrix();
+
+    shader->use();
+    shader->setMat4("view", view);
+    shader->setVec3("position", {0,0,0});
+
+    // render
+    glBindVertexArray(VAO);
+
+    //explicitly bind the VBO
+    //glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+
+    // calculate the model matrix for each object and pass it to shader before drawing
+    glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+    model = glm::translate(model, glm::vec3(0.f));
+    shader->setMat4("model", model);
+
+    glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 9);
+  }
+
   bool initialise() override
   {
     if (!WindowBase::initialise())
