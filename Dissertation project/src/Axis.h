@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <print>
 #include <algorithm>
 #include <ranges>
@@ -12,7 +13,18 @@
 
 #define FACE_SORT false
 #define FACE_CULL true
+#define USE_INSTANCING true
 
+#define SEARCH_THREADS 20
+
+namespace std
+{
+	template< class InputIt, class OutputIt, class UnaryPred >
+	inline void move_if(InputIt first, InputIt last, OutputIt d_first, UnaryPred pred)
+	{
+		std::copy_if(std::make_move_iterator(first), std::make_move_iterator(last), d_first, pred);
+	}
+}
 
 class Axis : public IDrawable
 {
@@ -31,14 +43,21 @@ public:
 	void initialise(glm::mat4& projection) override {}
 	void initialise(glm::mat4& projection, Shader* shader) override {}
 
-	void addFaces(std::vector<Cube>& voxels)
+	void addFaces(const std::vector<Cube>& voxels)
 	{
-		using namespace std::ranges::views;
-
 		std::vector<Rect*> temp_faces;
-		for (Cube& voxel : voxels)
+		for (const Cube& voxel : voxels)
 		{
-			temp_faces.append_range(voxel.getFaces() | filter([this](Rect* face) {return face->getAxis() == m_axis; }));
+			std::move_if(voxel.getFaces().begin(), voxel.getFaces().end(), std::back_inserter(temp_faces),
+				[this](Rect* face) 
+				{
+					if (face->getAxis() == m_axis) 
+					{ 
+						face_position_cache.emplace_back(face->getPosition());
+						return true; 
+					}
+					return false; 
+				});
 		}
 
 #if FACE_SORT
@@ -47,12 +66,24 @@ public:
 
 #if FACE_CULL
 
-		//essentially making copy_if into move_if
-		std::copy_if(
-			std::make_move_iterator(temp_faces.begin()),
-			std::make_move_iterator(temp_faces.end()),
-			std::back_inserter(faces), 
-			[this, &temp_faces](Rect* face) {return !isFaceCovered(face, temp_faces); });
+		for (int i = 0; i < SEARCH_THREADS; i++)
+		{
+			thread_pool[i] = std::move(std::thread([this, i, temp_faces] { checkFaces(i, temp_faces, temp_vectors[i]); }));
+		}
+
+		for (int i = 0; i < SEARCH_THREADS; i++)
+		{
+			thread_pool[i].join();
+			faces.insert(faces.end(), std::make_move_iterator(temp_vectors[i].begin()), std::make_move_iterator(temp_vectors[i].end()));
+		}
+
+#if USE_INSTANCING
+		for (auto& face : faces)
+		{
+			std::vector<float> global_vertices = face->getVerticesWithPosition();
+			m_instanced_vertices.insert(m_instanced_vertices.end(), std::make_move_iterator(global_vertices.begin()), std::make_move_iterator(global_vertices.end()));
+		}
+#endif
 
 #endif
 	}
@@ -72,6 +103,15 @@ private:
 		return pos_a < pos_b;
 	}
 
+	void checkFaces(const int i, const std::vector<Rect*>& temp_faces, std::vector<Rect*>& new_vec)
+	{
+		int start = temp_faces.size() * (float)i / SEARCH_THREADS;
+		int end = temp_faces.size() * (float)(i + 1) / SEARCH_THREADS;
+
+		std::move_if(temp_faces.begin() + start, temp_faces.begin() + end, std::back_inserter(new_vec),
+			[this, &temp_faces](Rect* face) {return !isFaceCovered(face, temp_faces); });
+	}
+
 	//returns true if the face is covered and shouldn't be shown
 	bool isFaceCovered(const Rect* face, const std::vector<Rect*>& other_faces) const
 	{
@@ -85,30 +125,50 @@ private:
 		glm::vec3 pos = face->getPosition();
 
 		//chec if the face os covered by another face
-		for (int idx = 0; idx < other_faces.size(); idx++)
+		for (int i = 0; i < other_faces.size(); i++)
 		{
 			//if the current face is the same as the input face
-			if (face == other_faces[idx])
+			if (face == other_faces[i])
 			{
 				continue;
 			}
-			
-			//if the current face's position is the same as the input face's position
-			if (pos == other_faces[idx]->getPosition())
+
+			const glm::vec3& other_pos = face_position_cache[i];
+
+			//using early returns to speed up comparing two vectors
+			// comparing two glm::vec3-s is slower than comparing two floats
+			if (other_pos.x != pos.x)
 			{
-				return true;
+				continue;
 			}
+
+			if (other_pos.y != pos.y)
+			{
+				continue;
+			}
+
+			if (other_pos.z != pos.z)
+			{
+				continue;
+			}
+
+			return true;
 		}
+
 		return false;
 	}
 
 	void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window) override
 	{
+#if USE_INSTANCING == false
 		for (Rect* face : faces)
 		{
 			if (face == nullptr) continue;
 			window.draw(*face);
 		}
+#else
+		window.draw(m_instanced_vertices, &faces[0]->getShader());
+#endif
 	}
 
 private:
@@ -117,4 +177,10 @@ private:
 	int axis_size;
 	int axis_area;
 	std::vector<Rect*> faces;
+	std::vector<glm::vec3> face_position_cache;
+
+	std::array<std::thread, SEARCH_THREADS> thread_pool;
+	std::array<std::vector<Rect*>, SEARCH_THREADS> temp_vectors;
+
+	std::vector<float> m_instanced_vertices;
 };

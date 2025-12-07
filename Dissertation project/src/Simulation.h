@@ -53,9 +53,13 @@ private:
 		//timing the initialisation of the axes
 		timer.Start();
 
-		x_axis.addFaces(cubes);
-		y_axis.addFaces(cubes);
-		z_axis.addFaces(cubes);
+		std::thread x_thread([this] { x_axis.addFaces(cubes); });
+		std::thread y_thread([this] { y_axis.addFaces(cubes); });
+		std::thread z_thread([this] { z_axis.addFaces(cubes); });
+
+		x_thread.join();
+		y_thread.join();
+		z_thread.join();
 
 		printf("Axes splitting time: ");
 		std::cout << std::to_string(timer.End()) << std::endl;
@@ -66,7 +70,7 @@ private:
 
 	DrawWindow m_window;
 
-	static constexpr glm::vec<3, int> m_world_size = {20,20,20};
+	static constexpr glm::vec<3, int> m_world_size = {50,20,50};
 	std::vector<Cube> cubes;
 
 	Shader cube_shader;
