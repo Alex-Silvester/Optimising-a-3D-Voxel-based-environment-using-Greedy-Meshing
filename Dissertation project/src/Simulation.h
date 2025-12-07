@@ -53,9 +53,11 @@ private:
 		//timing the initialisation of the axes
 		timer.Start();
 
-		std::thread x_thread([this] { x_axis.addFaces(cubes); });
-		std::thread y_thread([this] { y_axis.addFaces(cubes); });
-		std::thread z_thread([this] { z_axis.addFaces(cubes); });
+		
+
+		std::thread x_thread([this] { x_axis.addFaces(cubes, mtx); });
+		std::thread y_thread([this] { y_axis.addFaces(cubes, mtx); });
+		std::thread z_thread([this] { z_axis.addFaces(cubes, mtx); });
 
 		x_thread.join();
 		y_thread.join();
@@ -70,7 +72,7 @@ private:
 
 	DrawWindow m_window;
 
-	static constexpr glm::vec<3, int> m_world_size = {50,20,50};
+	static constexpr glm::vec<3, int> m_world_size = {20,20,20};
 	std::vector<Cube> cubes;
 
 	Shader cube_shader;
@@ -83,6 +85,8 @@ private:
 	std::atomic<bool> m_window_open = true;
 
 	glm::mat4 projection;
+
+	std::mutex mtx;
 };
 
 bool Simulation::init()
