@@ -9,12 +9,11 @@ in vec3 FragPos;
 uniform vec3 lightPos; 
 uniform vec3 lightColor;
 uniform vec3 objectColor;
-uniform int intensity;
+uniform float intensity;
+uniform float ambientStrength;
 
 void main()
 {
-	// ambient
-    float ambientStrength = 1.0;
     vec3 ambient = ambientStrength * lightColor;
   	
     // diffuse 

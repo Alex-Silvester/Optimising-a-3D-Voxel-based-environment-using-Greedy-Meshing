@@ -8,9 +8,7 @@ class Cube : public IDrawable
 {
 public:
 
-	Cube()
-	{
-	}
+	Cube() = default;
 
 	Cube(glm::mat4& projection, const glm::vec3& position, Shader* shader)
 	{

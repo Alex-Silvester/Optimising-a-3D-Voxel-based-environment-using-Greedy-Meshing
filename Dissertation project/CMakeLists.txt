@@ -36,13 +36,13 @@ add_executable (${PROJECT_NAME} "main.cpp"
 "src/Window/DrawWindow.h" 
 "src/camera.h" 
 "src/Interfaces/IDrawable.h"
-"src/shader.h"
+"src/Shader Types/shader.h"
 "src/shapes/triangle.h" 
 "src/shapes/Rect.h"
 "src/shapes/Cube.h"  
 "src/Axis.h" 
 "src/Timer.h"
-"src/Noise/PerlinNoise.h")
+"src/Noise/PerlinNoise.h" "src/Shader Types/CubeShader.h")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
