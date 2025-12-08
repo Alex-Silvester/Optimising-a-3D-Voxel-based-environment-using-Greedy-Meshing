@@ -148,18 +148,6 @@ void Axis::addFaces(const std::vector<Cube>& voxels, std::mutex& mtx)
 
 	std::sort(faces.begin(), faces.end(), [this](Rect* face_a, Rect* face_b) {return faceSorter(face_a, face_b); });
 
-	mtx.lock();
-
-	std::println("Axis: {}", axisString(m_axis));
-	for (auto& face : faces)
-	{
-		auto& pos = face->getPosition();
-		std::println("{} {} {}", pos.x, pos.y, pos.z);
-	}
-	std::println();
-
-	mtx.unlock();
-
 #endif
 }
 
