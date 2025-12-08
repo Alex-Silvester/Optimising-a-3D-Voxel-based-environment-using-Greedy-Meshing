@@ -6,16 +6,17 @@
 #include <ranges>
 #include <vector>
 #include <numeric>
+#include <mutex>
 
 #include "Interfaces/IDrawable.h"
 
 #include "shapes/Cube.h"
 
-#define FACE_SORT false
+#define FACE_SORT true
 #define FACE_CULL true
 #define USE_INSTANCING true
 
-#define SEARCH_THREADS 20
+#define SEARCH_THREADS 10
 
 namespace std
 {
@@ -32,130 +33,48 @@ public:
 
 	explicit Axis(Axis_t axis, int axis_size, int axis_area) : m_axis(axis), axis_size(axis_size), axis_area(axis_area) {};
 
-	~Axis() 
-	{
-		//for (Rect* face : faces)
-		//{
-		//	delete face;
-		//}
-	}
+	~Axis() {}
 
 	void initialise(glm::mat4& projection) override {}
 	void initialise(glm::mat4& projection, Shader* shader) override {}
 
-	void addFaces(const std::vector<Cube>& voxels)
-	{
-		std::vector<Rect*> temp_faces;
-		for (const Cube& voxel : voxels)
-		{
-			std::move_if(voxel.getFaces().begin(), voxel.getFaces().end(), std::back_inserter(temp_faces),
-				[this](Rect* face) 
-				{
-					if (face->getAxis() == m_axis) 
-					{ 
-						face_position_cache.emplace_back(face->getPosition());
-						return true; 
-					}
-					return false; 
-				});
-		}
-
-#if FACE_SORT
-		std::sort(faces.begin(), faces.end(), [this](Rect* face_a, Rect* face_b) {return faceSorter(face_a, face_b); });
-#endif
-
-#if FACE_CULL
-
-		for (int i = 0; i < SEARCH_THREADS; i++)
-		{
-			thread_pool[i] = std::move(std::thread([this, i, temp_faces] { checkFaces(i, temp_faces, temp_vectors[i]); }));
-		}
-
-		for (int i = 0; i < SEARCH_THREADS; i++)
-		{
-			thread_pool[i].join();
-			faces.insert(faces.end(), std::make_move_iterator(temp_vectors[i].begin()), std::make_move_iterator(temp_vectors[i].end()));
-		}
-
-#if USE_INSTANCING
-		for (auto& face : faces)
-		{
-			std::vector<float> global_vertices = face->getVerticesWithPosition();
-			m_instanced_vertices.insert(m_instanced_vertices.end(), std::make_move_iterator(global_vertices.begin()), std::make_move_iterator(global_vertices.end()));
-		}
-#endif
-
-#endif
-	}
+	void addFaces(const std::vector<Cube>& voxels, std::mutex& mtx);
 
 private:
 
-	float axis_pos(const Rect* face) const
+	float axis_pos(const Rect* face, Axis_t axis = EMPTY) const
 	{
-		return m_axis == X ? face->getPosition().x : (m_axis == Y ? face->getPosition().y : face->getPosition().z);
+		Axis_t use_axis = (axis == EMPTY) ? m_axis : axis;
+		return use_axis == X ? face->getPosition().x : (use_axis == Y ? face->getPosition().y : face->getPosition().z);
 	}
 
-	bool faceSorter(const Rect* face_a, const Rect* face_b) const
-	{
-		float pos_a = axis_pos(face_a);
-		float pos_b = axis_pos(face_b);
+	bool faceSorter(const Rect* face_a, const Rect* face_b) const;
 
-		return pos_a < pos_b;
-	}
-
-	void checkFaces(const int i, const std::vector<Rect*>& temp_faces, std::vector<Rect*>& new_vec)
-	{
-		int start = temp_faces.size() * (float)i / SEARCH_THREADS;
-		int end = temp_faces.size() * (float)(i + 1) / SEARCH_THREADS;
-
-		std::move_if(temp_faces.begin() + start, temp_faces.begin() + end, std::back_inserter(new_vec),
-			[this, &temp_faces](Rect* face) {return !isFaceCovered(face, temp_faces); });
-	}
+	void checkFaces(const int i, const std::vector<Rect*>& temp_faces, std::vector<Rect*>& new_vec);
 
 	//returns true if the face is covered and shouldn't be shown
-	bool isFaceCovered(const Rect* face, const std::vector<Rect*>& other_faces) const
+	bool isFaceCovered(const Rect* face, const std::vector<Rect*>& other_faces) const;
+
+	static constexpr Axis_t nextAxis(Axis_t axis)
 	{
-		//if the face is on an edge, return early
-		float axis_check = axis_pos(face);
-		if (axis_check < 0 || axis_check > axis_size)
+		switch (axis)
 		{
-			return false;
+		case Axis_t::X: return Axis_t::Y;
+		case Axis_t::Y: return Axis_t::Z;
+		case Axis_t::Z: return Axis_t::X;
+		default:        return Axis_t::EMPTY;
 		}
+	}
 
-		glm::vec3 pos = face->getPosition();
-
-		//chec if the face os covered by another face
-		for (int i = 0; i < other_faces.size(); i++)
+	static constexpr const char* axisString(Axis_t axis)
+	{
+		switch (axis)
 		{
-			//if the current face is the same as the input face
-			if (face == other_faces[i])
-			{
-				continue;
-			}
-
-			const glm::vec3& other_pos = face_position_cache[i];
-
-			//using early returns to speed up comparing two vectors
-			// comparing two glm::vec3-s is slower than comparing two floats
-			if (other_pos.x != pos.x)
-			{
-				continue;
-			}
-
-			if (other_pos.y != pos.y)
-			{
-				continue;
-			}
-
-			if (other_pos.z != pos.z)
-			{
-				continue;
-			}
-
-			return true;
+		case Axis_t::X: return "X";
+		case Axis_t::Y: return "Y";
+		case Axis_t::Z: return "Z";
+		default:        return "None";
 		}
-
-		return false;
 	}
 
 	void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window) override
@@ -184,3 +103,148 @@ private:
 
 	std::vector<float> m_instanced_vertices;
 };
+
+void Axis::addFaces(const std::vector<Cube>& voxels, std::mutex& mtx)
+{
+	std::vector<Rect*> temp_faces;
+	for (const Cube& voxel : voxels)
+	{
+		std::move_if(voxel.getFaces().begin(), voxel.getFaces().end(), std::back_inserter(temp_faces),
+			[this](Rect* face)
+			{
+				if (face->getAxis() == m_axis)
+				{
+					face_position_cache.emplace_back(face->getPosition());
+					return true;
+				}
+				return false;
+			});
+	}
+
+#if FACE_CULL
+
+	for (int i = 0; i < SEARCH_THREADS; i++)
+	{
+		thread_pool[i] = std::move(std::thread([this, i, temp_faces] { checkFaces(i, temp_faces, temp_vectors[i]); }));
+	}
+
+	for (int i = 0; i < SEARCH_THREADS; i++)
+	{
+		thread_pool[i].join();
+		faces.insert(faces.end(), std::make_move_iterator(temp_vectors[i].begin()), std::make_move_iterator(temp_vectors[i].end()));
+	}
+
+#if USE_INSTANCING
+	for (auto& face : faces)
+	{
+		std::vector<float> global_vertices = face->getVerticesWithPosition();
+		m_instanced_vertices.insert(m_instanced_vertices.end(), std::make_move_iterator(global_vertices.begin()), std::make_move_iterator(global_vertices.end()));
+	}
+#endif
+
+#endif
+
+#if FACE_SORT
+
+	std::sort(faces.begin(), faces.end(), [this](Rect* face_a, Rect* face_b) {return faceSorter(face_a, face_b); });
+
+	mtx.lock();
+
+	std::println("Axis: {}", axisString(m_axis));
+	for (auto& face : faces)
+	{
+		auto& pos = face->getPosition();
+		std::println("{} {} {}", pos.x, pos.y, pos.z);
+	}
+	std::println();
+
+	mtx.unlock();
+
+#endif
+}
+
+inline bool Axis::faceSorter(const Rect* face_a, const Rect* face_b) const
+{
+	Axis_t curr_axis = m_axis;
+
+	if (axis_pos(face_a, curr_axis) == axis_pos(face_b, curr_axis))
+	{
+		curr_axis = nextAxis(curr_axis);
+		if (axis_pos(face_a, curr_axis) == axis_pos(face_b, curr_axis))
+		{
+			curr_axis = nextAxis(curr_axis);
+			if (axis_pos(face_a, curr_axis) == axis_pos(face_b, curr_axis))
+			{
+				return false;
+			}
+			else if (axis_pos(face_a, curr_axis) < axis_pos(face_b, curr_axis))
+			{
+				return true;
+			}
+		}
+		else if (axis_pos(face_a, curr_axis) < axis_pos(face_b, curr_axis))
+		{
+			return true;
+		}
+	}
+	else if (axis_pos(face_a, curr_axis) < axis_pos(face_b, curr_axis))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void Axis::checkFaces(const int i, const std::vector<Rect*>& temp_faces, std::vector<Rect*>& new_vec)
+{
+	int start = temp_faces.size() * (float)i / SEARCH_THREADS;
+	int end = temp_faces.size() * (float)(i + 1) / SEARCH_THREADS;
+
+	std::move_if(temp_faces.begin() + start, temp_faces.begin() + end, std::back_inserter(new_vec),
+		[this, &temp_faces](Rect* face) {return !isFaceCovered(face, temp_faces); });
+}
+
+bool Axis::isFaceCovered(const Rect* face, const std::vector<Rect*>& other_faces) const
+{
+	//if the face is on an edge, return early
+	float axis_check = axis_pos(face);
+	if (axis_check < 0 || axis_check > axis_size)
+	{
+		return false;
+	}
+
+	glm::vec3 pos = face->getPosition();
+
+	//chec if the face os covered by another face
+	for (int i = 0; i < other_faces.size(); i++)
+	{
+		//if the current face is the same as the input face
+		if (face == other_faces[i])
+		{
+			continue;
+		}
+
+		const glm::vec3& other_pos = face_position_cache[i];
+
+		//using early returns to speed up comparing two vectors
+		// comparing two glm::vec3-s is slower than comparing two floats
+		if (other_pos.x != pos.x)
+		{
+			continue;
+		}
+
+		if (other_pos.y != pos.y)
+		{
+			continue;
+		}
+
+		if (other_pos.z != pos.z)
+		{
+			continue;
+		}
+
+		return true;
+	}
+
+	return false;
+}

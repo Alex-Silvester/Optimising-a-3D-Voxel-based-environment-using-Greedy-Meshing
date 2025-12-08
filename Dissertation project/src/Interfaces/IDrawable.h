@@ -4,7 +4,7 @@
 
 #include <vector>
 
-#include "../shader.h"
+#include "../Shader Types/CubeShader.h"
 #include "../Window/DrawWindow.h"
 
 class IDrawable
@@ -22,7 +22,7 @@ public:
 
   void setShader(const char* vertex_path, const char* fragment_path, glm::mat4& projection)
   {
-      m_shader->init(vertex_path, fragment_path);
+    m_shader->init(vertex_path, fragment_path);
 
     m_shader->use();
     m_shader->setVec3("objectColor", 1.0f, 1.0f, 1.0f);

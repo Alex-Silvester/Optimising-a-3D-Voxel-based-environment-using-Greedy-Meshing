@@ -46,34 +46,16 @@ private:
 
 	inline void worldCreation();
 
-	inline void axesSplitting()
-	{
-		Timer<std::nano> timer;
-
-		//timing the initialisation of the axes
-		timer.Start();
-
-		std::thread x_thread([this] { x_axis.addFaces(cubes); });
-		std::thread y_thread([this] { y_axis.addFaces(cubes); });
-		std::thread z_thread([this] { z_axis.addFaces(cubes); });
-
-		x_thread.join();
-		y_thread.join();
-		z_thread.join();
-
-		printf("Axes splitting time: ");
-		std::cout << std::to_string(timer.End()) << std::endl;
-		printf("\n");
-	}
+	inline void axesSplitting();
 
 private:
 
 	DrawWindow m_window;
 
-	static constexpr glm::vec<3, int> m_world_size = {50,20,50};
+	static constexpr glm::vec<3, int> m_world_size = {20,20,20};
 	std::vector<Cube> cubes;
 
-	Shader cube_shader;
+	CubeShader cube_shader;
 
 	Axis x_axis = Axis(Axis_t::X, m_world_size.x, m_world_size.y * m_world_size.z);
 	Axis y_axis = Axis(Axis_t::Y, m_world_size.y, m_world_size.z * m_world_size.x);
@@ -83,6 +65,8 @@ private:
 	std::atomic<bool> m_window_open = true;
 
 	glm::mat4 projection;
+
+	std::mutex mtx;
 };
 
 bool Simulation::init()
@@ -148,9 +132,7 @@ void Simulation::worldCreation()
 	Timer<std::nano> timer;
 	timer.Start();
 
-	cube_shader.init(
-		"Data/shaders/vertex/vertex_shader.txt",
-		"Data/shaders/fragment/fragment_shader.txt");
+	cube_shader.init();
 
 	//initialising the world
 	for (int i = 0; i < m_world_size.x * m_world_size.y * m_world_size.z; i++)
@@ -164,13 +146,34 @@ void Simulation::worldCreation()
 		if (noise_eval > 0.2f) continue;
 #endif
 
-		cubes.emplace_back(
-			projection,
-			pos,
-			&cube_shader);
+		cubes.emplace_back(projection, pos, cube_shader.shaderPtr());
+
+		cube_shader.setLightPosition(m_world_size.x / 2.f, m_world_size.y, m_world_size.z / 2.f);
+		cube_shader.setAmbientLightStrength(0.5f);
+		cube_shader.setLightIntensity(1.f);
 	}
 
 	//ending the world creation time
 	printf("Creation time: ");
 	std::cout << std::to_string(timer.End()) << std::endl;
+}
+
+inline void Simulation::axesSplitting()
+{
+	Timer<std::nano> timer;
+
+	//timing the initialisation of the axes
+	timer.Start();
+
+	std::thread x_thread([this] { x_axis.addFaces(cubes, mtx); });
+	std::thread y_thread([this] { y_axis.addFaces(cubes, mtx); });
+	std::thread z_thread([this] { z_axis.addFaces(cubes, mtx); });
+
+	x_thread.join();
+	y_thread.join();
+	z_thread.join();
+
+	printf("Axes splitting time: ");
+	std::cout << std::to_string(timer.End()) << std::endl;
+	printf("\n");
 }
