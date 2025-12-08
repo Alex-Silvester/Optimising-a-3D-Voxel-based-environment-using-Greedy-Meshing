@@ -42,9 +42,10 @@ public:
 
 private:
 
-	float axis_pos(const Rect* face) const
+	float axis_pos(const Rect* face, Axis_t axis = EMPTY) const
 	{
-		return m_axis == X ? face->getPosition().x : (m_axis == Y ? face->getPosition().y : face->getPosition().z);
+		Axis_t use_axis = (axis == EMPTY) ? m_axis : axis;
+		return use_axis == X ? face->getPosition().x : (use_axis == Y ? face->getPosition().y : face->getPosition().z);
 	}
 
 	bool faceSorter(const Rect* face_a, const Rect* face_b) const;
@@ -53,6 +54,28 @@ private:
 
 	//returns true if the face is covered and shouldn't be shown
 	bool isFaceCovered(const Rect* face, const std::vector<Rect*>& other_faces) const;
+
+	static constexpr Axis_t nextAxis(Axis_t axis)
+	{
+		switch (axis)
+		{
+		case Axis_t::X: return Axis_t::Y;
+		case Axis_t::Y: return Axis_t::Z;
+		case Axis_t::Z: return Axis_t::X;
+		default:        return Axis_t::EMPTY;
+		}
+	}
+
+	static constexpr const char* axisString(Axis_t axis)
+	{
+		switch (axis)
+		{
+		case Axis_t::X: return "X";
+		case Axis_t::Y: return "Y";
+		case Axis_t::Z: return "Z";
+		default:        return "None";
+		}
+	}
 
 	void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window) override
 	{
@@ -125,33 +148,46 @@ void Axis::addFaces(const std::vector<Cube>& voxels, std::mutex& mtx)
 
 	std::sort(faces.begin(), faces.end(), [this](Rect* face_a, Rect* face_b) {return faceSorter(face_a, face_b); });
 
+	mtx.lock();
+
+	std::println("Axis: {}", axisString(m_axis));
+	for (auto& face : faces)
+	{
+		auto& pos = face->getPosition();
+		std::println("{} {} {}", pos.x, pos.y, pos.z);
+	}
+	std::println();
+
+	mtx.unlock();
+
 #endif
 }
 
 inline bool Axis::faceSorter(const Rect* face_a, const Rect* face_b) const
 {
-	const glm::vec3& pos_a = face_a->getPosition();
-	const glm::vec3& pos_b = face_b->getPosition();
+	Axis_t curr_axis = m_axis;
 
-	if (pos_a.x == pos_b.x)
+	if (axis_pos(face_a, curr_axis) == axis_pos(face_b, curr_axis))
 	{
-		if (pos_a.y == pos_b.y)
+		curr_axis = nextAxis(curr_axis);
+		if (axis_pos(face_a, curr_axis) == axis_pos(face_b, curr_axis))
 		{
-			if (pos_a.z == pos_b.z)
+			curr_axis = nextAxis(curr_axis);
+			if (axis_pos(face_a, curr_axis) == axis_pos(face_b, curr_axis))
 			{
 				return false;
 			}
-			else if (pos_a.z < pos_b.z)
+			else if (axis_pos(face_a, curr_axis) < axis_pos(face_b, curr_axis))
 			{
 				return true;
 			}
 		}
-		else if (pos_a.y < pos_b.y)
+		else if (axis_pos(face_a, curr_axis) < axis_pos(face_b, curr_axis))
 		{
 			return true;
 		}
 	}
-	else if (pos_a.x < pos_b.x)
+	else if (axis_pos(face_a, curr_axis) < axis_pos(face_b, curr_axis))
 	{
 		return true;
 	}
