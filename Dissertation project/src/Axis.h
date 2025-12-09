@@ -12,7 +12,7 @@
 
 #include "shapes/Cube.h"
 
-#define FACE_SORT true
+#define GREEDY_MESH true
 #define FACE_CULL true
 #define USE_INSTANCING true
 
@@ -54,6 +54,8 @@ private:
 
 	//returns true if the face is covered and shouldn't be shown
 	bool isFaceCovered(const Rect* face, const std::vector<Rect*>& other_faces) const;
+
+	void meshFaces();
 
 	static constexpr Axis_t nextAxis(Axis_t axis)
 	{
@@ -144,9 +146,11 @@ void Axis::addFaces(const std::vector<Cube>& voxels, std::mutex& mtx)
 
 #endif
 
-#if FACE_SORT
+#if GREEDY_MESH
 
 	std::sort(faces.begin(), faces.end(), [this](Rect* face_a, Rect* face_b) {return faceSorter(face_a, face_b); });
+
+	meshFaces();
 
 #endif
 }
@@ -235,4 +239,17 @@ bool Axis::isFaceCovered(const Rect* face, const std::vector<Rect*>& other_faces
 	}
 
 	return false;
+}
+
+void Axis::meshFaces()
+{
+	for (int i = 0; i < faces.size() - 1; i++)
+	{
+		//if the next face to be checked isn't on the same slice as the current, then go to the next face/slice
+		if (axis_pos(faces[i]) != axis_pos(faces[i + 1])) continue;
+
+		//check all faces in one axis and mesh
+
+		//check all faces in the other axis and mesh the (now) larger faces
+	}
 }
