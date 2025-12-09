@@ -7,6 +7,41 @@
 #include "../Shader Types/CubeShader.h"
 #include "../Window/DrawWindow.h"
 
+struct Vertex
+{
+  Vertex(float px, float py, float pz, float cr, float cg, float cb, float nx, float ny, float nz) :
+    position(px,py,pz), 
+    color(cr,cg,cb), 
+    normal(nx,ny,nz) {}
+
+  struct Position
+  {
+    Position(float& _x, float& _y, float& _z) : x(_x), y(_y), z(_z) {}
+
+    float& x;
+    float& y;
+    float& z;
+  } position;
+
+  struct Color
+  {
+    Color(float& _r, float& _g, float& _b) : r(_r), g(_g), b(_b) {}
+
+    float& r;
+    float& g;
+    float& b;
+  } color;
+
+  struct Normal
+  {
+    Normal(float& _x, float& _y, float& _z) : x(_x), y(_y), z(_z) {}
+
+    float& x;
+    float& y;
+    float& z;
+  } normal;
+};
+
 class IDrawable
 {
 public:
@@ -48,14 +83,42 @@ public:
     m_shader->setMat4("projection", projection);
   }
   
-  void setVertices(const std::vector<float>& m_vertices)
+  void setVertices(const std::vector<float>& vertices)
   {
-    this->m_vertices = m_vertices;
+    m_vertices = vertices;
+
+    for (int i = 0; i < m_vertices.size(); i+=9)
+    {
+      m_mut_vertices.emplace_back(
+        m_vertices[i + 0],
+        m_vertices[i + 1],
+        m_vertices[i + 2],
+        m_vertices[i + 3],
+        m_vertices[i + 4],
+        m_vertices[i + 5],
+        m_vertices[i + 6],
+        m_vertices[i + 7],
+        m_vertices[i + 8]);
+    }
   }
 
   void setVertices(const float* vertices, int vals)
   {
     this->m_vertices = std::vector<float>(vertices, vertices + vals);
+
+    for (int i = 0; i < m_vertices.size(); i += 9)
+    {
+      m_mut_vertices.emplace_back(
+        m_vertices[i + 0],
+        m_vertices[i + 1],
+        m_vertices[i + 2],
+        m_vertices[i + 3],
+        m_vertices[i + 4],
+        m_vertices[i + 5],
+        m_vertices[i + 6],
+        m_vertices[i + 7],
+        m_vertices[i + 8]);
+    }
   }
 
   Shader& getShader()
@@ -67,6 +130,11 @@ public:
   {
     return m_vertices;
 	}
+
+  std::vector<Vertex>& getVerticesMut()
+  {
+    return m_mut_vertices;
+  }
 
   std::vector<float> getVerticesWithPosition() const
   {
@@ -185,6 +253,7 @@ private:
 
   glm::vec3 m_position = { 0,0,0 };
 	std::vector<float> m_vertices;
+  std::vector<Vertex> m_mut_vertices;
   Shader* m_shader = nullptr;
 
   glm::vec3 m_scale = { 1.0f , 1.0f, 1.0f };
