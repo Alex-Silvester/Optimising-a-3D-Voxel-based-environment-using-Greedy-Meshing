@@ -67,6 +67,8 @@ private:
 	glm::mat4 projection;
 
 	std::mutex mtx;
+
+	Rect test_rect;
 };
 
 bool Simulation::init()
@@ -77,6 +79,17 @@ bool Simulation::init()
 	worldCreation();
 
 	axesSplitting();
+
+	cube_shader.setLightPosition(m_world_size.x / 2.f, m_world_size.y, m_world_size.z / 2.f);
+	cube_shader.setAmbientLightStrength(0.5f);
+	cube_shader.setLightIntensity(1.f);
+
+	test_rect.initialise(projection, cube_shader.shaderPtr());
+	test_rect.setFacing(Axis_t::X, true);
+	test_rect.setPosition({-1, 0, 0});
+	test_rect.scaleAndMoveZ(3);
+	test_rect.scaleAndMoveY(2);
+	test_rect.scaleAndMoveY(2);
 
 	return true;
 }
@@ -122,6 +135,8 @@ void Simulation::render()
 	m_window.draw(x_axis);
 	m_window.draw(y_axis);
 	m_window.draw(z_axis);
+
+	m_window.draw(test_rect);
 }
 
 void Simulation::worldCreation()
@@ -147,10 +162,6 @@ void Simulation::worldCreation()
 #endif
 
 		cubes.emplace_back(projection, pos, cube_shader.shaderPtr());
-
-		cube_shader.setLightPosition(m_world_size.x / 2.f, m_world_size.y, m_world_size.z / 2.f);
-		cube_shader.setAmbientLightStrength(0.5f);
-		cube_shader.setLightIntensity(1.f);
 	}
 
 	//ending the world creation time

@@ -112,9 +112,51 @@ public:
 		return m_rect_position;
 	}
 
+	bool scaleX(float scale)
+	{
+		//don't attempt to scale the axis direction as it changes the position of the rect
+		if (m_current_axis == Axis_t::X) return false;
+
+		this->scale({ scale, 1, 1 });
+		return true;
+	}
+
+	bool scaleY(float scale)
+	{
+		//don't attempt to scale the axis direction as it changes the position of the rect
+		if (m_current_axis == Axis_t::Y) return false;
+
+		this->scale({ 1, scale, 1 });
+		return true;
+	}
+
+	bool scaleZ(float scale)
+	{
+		//don't attempt to scale the axis direction as it changes the position of the rect
+		if (m_current_axis == Axis_t::Z) return false;
+
+		this->scale({ 1, 1, scale });
+		return true;
+	}
+
+	void scaleAndMoveX(float scale)
+	{
+		this->scale({scale,1,1}, { 0.5f,0,0 });
+	}
+
+	void scaleAndMoveY(float scale)
+	{
+		this->scale({ 1,scale,1 }, { 0,0.5f,0 });
+	}
+
+	void scaleAndMoveZ(float scale)
+	{
+		this->scale({ 1,1,scale }, { 0,0,0.5f });
+	}
+
 	Axis_t getAxis() const { return m_current_axis; }
 
 private:
-	Axis_t m_current_axis;
-	glm::vec3 m_rect_position;
+	Axis_t m_current_axis = Axis_t::EMPTY;
+	glm::vec3 m_rect_position = {0,0,0};
 };
