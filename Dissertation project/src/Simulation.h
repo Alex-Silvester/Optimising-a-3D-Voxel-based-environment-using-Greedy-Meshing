@@ -69,6 +69,8 @@ private:
 	std::mutex mtx;
 
 	Rect test_rect;
+	Rect test_rect_2;
+	Rect test_rect_3;
 };
 
 bool Simulation::init()
@@ -85,11 +87,22 @@ bool Simulation::init()
 	cube_shader.setLightIntensity(1.f);
 
 	test_rect.initialise(projection, cube_shader.shaderPtr());
-	test_rect.setFacing(Axis_t::X, true);
-	test_rect.setPosition({-1, 0, 0});
-	test_rect.scaleAndMoveZ(3);
-	test_rect.scaleAndMoveY(2);
-	test_rect.scaleAndMoveY(2);
+	test_rect.setFacing(Axis_t::X);
+	test_rect.setPosition({-3, 0, 0});
+
+	test_rect_2.initialise(projection, cube_shader.shaderPtr());
+	test_rect_2.setFacing(Axis_t::X);
+	test_rect_2.setPosition({ -3, 0, 1 });
+
+	test_rect_3.initialise(projection, cube_shader.shaderPtr());
+	test_rect_3.setFacing(Axis_t::X);
+	test_rect_3.setPosition({ -3, 0, 2 });
+
+	if (test_rect.mergeRects(test_rect_2)) printf("Success");
+	else printf("Failure");
+
+	if (test_rect.mergeRects(test_rect_3)) printf("Success");
+	else printf("Failure");
 
 	return true;
 }
@@ -137,6 +150,7 @@ void Simulation::render()
 	m_window.draw(z_axis);
 
 	m_window.draw(test_rect);
+	//m_window.draw(test_rect_2);
 }
 
 void Simulation::worldCreation()

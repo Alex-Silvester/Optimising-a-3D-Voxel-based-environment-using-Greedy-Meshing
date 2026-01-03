@@ -3,6 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <vector>
+#include <print>
 
 #include "../Shader Types/CubeShader.h"
 #include "../Window/DrawWindow.h"
@@ -168,7 +169,7 @@ public:
     return layer;
   }
 
-  const glm::vec3 &getScale() { return m_scale; }
+  const glm::vec3 &getScale() const { return m_scale; }
 
 private:
 
@@ -194,14 +195,17 @@ private:
 
     glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
 	}
+  
+protected:
+
+  glm::vec3 m_position = { 0,0,0 };
+  glm::vec3 m_scale = { 1.0f , 1.0f, 1.0f };
 
 private:
 
-  glm::vec3 m_position = { 0,0,0 };
 	std::vector<float> m_vertices;
   Shader* m_shader = nullptr;
 
-  glm::vec3 m_scale = { 1.0f , 1.0f, 1.0f };
 
   int layer = 0;
 };

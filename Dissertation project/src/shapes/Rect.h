@@ -1,6 +1,9 @@
 #pragma once
 
 #include "../Interfaces/IDrawable.h"
+#include <cmath>
+#include <glm/fwd.hpp>
+#include "../Shader Types/shader.h"
 
 enum Axis_t
 {
@@ -24,6 +27,10 @@ static const float default_square[default_sqaure_vals] = {
     0.5f, 0.5f, 0.f,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f
 };
 
+/// <summary>
+/// A default rect type that starts with a default 1x1x1 square to standardise 
+/// the side lengths for merges and other functions
+/// </summary>
 class Rect : public IDrawable
 {
 private:
@@ -103,13 +110,7 @@ public:
 
 	void setPosition(const glm::vec3& vec) override
 	{
-		m_rect_position = vec;
 		IDrawable::setPosition(vec);
-	}
-
-	const glm::vec3& getPosition() const override
-	{
-		return m_rect_position;
 	}
 
 	bool scaleX(float scale)
@@ -154,9 +155,88 @@ public:
 		this->scale({ 1,1,scale }, { 0,0,0.5f });
 	}
 
+	/// <summary>
+	/// Merges the current face and the given face given they meet the correct requirements.
+	/// A naive implementation assuming the use case is what is being done is the GM algorithm, 
+  /// not generalized for other use
+	/// </summary>
+	/// <param name="other_rect">The rect attempting to be merged with</param>
+	/// <returns></returns>
+	bool mergeRects(const Rect &other_rect)
+	{
+		//if the rects aren't on the same axis then don't attempt to merge them
+		if (other_rect.getAxis() != m_current_axis) return false;
+
+		//if the rects aren't on the same plane, then dont attempt to merge them
+		if (other_rect.axisPos() != this->axisPos()) return false;
+
+		glm::vec3 direction = 
+			glm::vec3(std::fabsf(other_rect.getPosition().x), std::fabsf(other_rect.getPosition().y), other_rect.getPosition().z) -
+			glm::vec3(std::fabsf(m_position.x), std::fabsf(m_position.y), std::fabsf(m_position.z));
+
+		if (direction.x != 0)
+		{
+			//if the faces arent the same size then don't attempt to merge them
+			if (other_rect.getScale().y != m_scale.y) return false;
+
+			float new_scale = m_scale.x + other_rect.getScale().x;
+
+			scaleAndMoveX(new_scale/m_scale.x);
+
+			return true;
+		}
+
+		if (direction.y != 0)
+		{
+			//if the faces arent the same size then don't attempt to merge them
+			if (other_rect.getScale().x != m_scale.x) return false;
+
+			float new_scale = m_scale.y + other_rect.getScale().y;
+
+			scaleAndMoveX(new_scale / m_scale.y);
+
+			return true;
+		}
+
+		if (direction.z != 0)
+		{
+			//if the faces arent the same size then don't attempt to merge them
+			if (other_rect.getScale().y != m_scale.y) return false;
+
+			float new_scale = m_scale.z + other_rect.getScale().z;
+
+			scaleAndMoveZ(new_scale / m_scale.z);
+
+			return true;
+		}
+
+		return false;
+	}
+
 	Axis_t getAxis() const { return m_current_axis; }
+
+	float axisPos() const
+	{
+		switch (m_current_axis)
+		{
+			case Axis_t::X: return m_position.x;
+			case Axis_t::Y: return m_position.y;
+			case Axis_t::Z: return m_position.z;
+		}
+		return NAN;
+	}
+
+	float axisScale() const
+	{
+		switch (m_current_axis)
+		{
+			case Axis_t::X: return m_scale.x;
+			case Axis_t::Y: return m_scale.y;
+			case Axis_t::Z: return m_scale.z;
+		}
+		return NAN;
+	}
 
 private:
 	Axis_t m_current_axis = Axis_t::EMPTY;
-	glm::vec3 m_rect_position = {0,0,0};
 };
