@@ -98,10 +98,10 @@ bool Simulation::init()
 	test_rect_3.setFacing(Axis_t::X);
 	test_rect_3.setPosition({ -3, 0, 2 });
 
-	if (test_rect.mergeRects(test_rect_2)) printf("Success");
+	if (test_rect.mergeRects<Y,Z>(test_rect_2)) printf("Success");
 	else printf("Failure");
 
-	if (test_rect.mergeRects(test_rect_3)) printf("Success");
+	if (test_rect.mergeRects<Y,Z>(test_rect_3)) printf("Success");
 	else printf("Failure");
 
 	return true;

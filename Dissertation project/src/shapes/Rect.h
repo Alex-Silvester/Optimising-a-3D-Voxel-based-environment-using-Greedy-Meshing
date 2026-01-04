@@ -140,17 +140,23 @@ public:
 		return true;
 	}
 
-	void scaleAndMoveX(float scale)
+	template<Axis_t axis>
+	void scaleAndMove(float scale) {}
+
+	template<>
+	void scaleAndMove<Axis_t::X>(float scale)
 	{
 		this->scale({scale,1,1}, { 0.5f,0,0 });
 	}
 
-	void scaleAndMoveY(float scale)
+	template<>
+	void scaleAndMove<Axis_t::Y>(float scale)
 	{
 		this->scale({ 1,scale,1 }, { 0,0.5f,0 });
 	}
 
-	void scaleAndMoveZ(float scale)
+	template<>
+	void scaleAndMove<Axis_t::Z>(float scale)
 	{
 		this->scale({ 1,1,scale }, { 0,0,0.5f });
 	}
@@ -162,6 +168,7 @@ public:
 	/// </summary>
 	/// <param name="other_rect">The rect attempting to be merged with</param>
 	/// <returns></returns>
+	template<Axis_t check_axis, Axis_t merge_axis>
 	bool mergeRects(const Rect &other_rect)
 	{
 		//if the rects aren't on the same axis then don't attempt to merge them
@@ -170,47 +177,15 @@ public:
 		//if the rects aren't on the same plane, then dont attempt to merge them
 		if (other_rect.axisPos() != this->axisPos()) return false;
 
-		glm::vec3 direction = 
-			glm::vec3(std::fabsf(other_rect.getPosition().x), std::fabsf(other_rect.getPosition().y), other_rect.getPosition().z) -
-			glm::vec3(std::fabsf(m_position.x), std::fabsf(m_position.y), std::fabsf(m_position.z));
+		//if the axis that is being merged into doesn't have the same scale 
+		// (i.e. merging in the x axis along z requires the y scale to be the same), return false
+		if (other_rect.axisScale(check_axis) != this->axisScale(check_axis)) return false;
 
-		if (direction.x != 0)
-		{
-			//if the faces arent the same size then don't attempt to merge them
-			if (other_rect.getScale().y != m_scale.y) return false;
+		float new_scale = this->axisScale(merge_axis) + other_rect.axisScale(merge_axis);
 
-			float new_scale = m_scale.x + other_rect.getScale().x;
+		scaleAndMove<merge_axis>(new_scale / this->axisScale(merge_axis));
 
-			scaleAndMoveX(new_scale/m_scale.x);
-
-			return true;
-		}
-
-		if (direction.y != 0)
-		{
-			//if the faces arent the same size then don't attempt to merge them
-			if (other_rect.getScale().x != m_scale.x) return false;
-
-			float new_scale = m_scale.y + other_rect.getScale().y;
-
-			scaleAndMoveX(new_scale / m_scale.y);
-
-			return true;
-		}
-
-		if (direction.z != 0)
-		{
-			//if the faces arent the same size then don't attempt to merge them
-			if (other_rect.getScale().y != m_scale.y) return false;
-
-			float new_scale = m_scale.z + other_rect.getScale().z;
-
-			scaleAndMoveZ(new_scale / m_scale.z);
-
-			return true;
-		}
-
-		return false;
+		return true;
 	}
 
 	Axis_t getAxis() const { return m_current_axis; }
@@ -226,9 +201,11 @@ public:
 		return NAN;
 	}
 
-	float axisScale() const
+	float axisScale(Axis_t axis = Axis_t::EMPTY) const
 	{
-		switch (m_current_axis)
+		if (axis == Axis_t::EMPTY) axis = m_current_axis;
+
+		switch (axis)
 		{
 			case Axis_t::X: return m_scale.x;
 			case Axis_t::Y: return m_scale.y;
