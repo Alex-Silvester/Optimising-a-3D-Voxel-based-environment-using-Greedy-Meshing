@@ -17,7 +17,11 @@ public:
 
 	Shader* shaderPtr()
 	{
-		return static_cast<Shader*>(this);
+		if (Shader* ptr = dynamic_cast<Shader*>(this))
+		{
+			return ptr;
+		}
+		return nullptr;
 	}
 
 	void setLightColor(float r, float g, float b)

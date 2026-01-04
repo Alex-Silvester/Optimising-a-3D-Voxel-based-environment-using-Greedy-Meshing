@@ -1,6 +1,9 @@
 #pragma once
 
 #include "../Interfaces/IDrawable.h"
+#include <cmath>
+#include <glm/fwd.hpp>
+#include "../Shader Types/shader.h"
 
 enum Axis_t
 {
@@ -24,6 +27,10 @@ static const float default_square[default_sqaure_vals] = {
     0.5f, 0.5f, 0.f,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f
 };
 
+/// <summary>
+/// A default rect type that starts with a default 1x1x1 square to standardise 
+/// the side lengths for merges and other functions
+/// </summary>
 class Rect : public IDrawable
 {
 private:
@@ -103,18 +110,118 @@ public:
 
 	void setPosition(const glm::vec3& vec) override
 	{
-		m_rect_position = vec;
 		IDrawable::setPosition(vec);
 	}
 
-	const glm::vec3& getPosition() const override
+	bool scaleX(float scale)
 	{
-		return m_rect_position;
+		//don't attempt to scale the axis direction as it changes the position of the rect
+		if (m_current_axis == Axis_t::X) return false;
+
+		this->scale({ scale, 1, 1 });
+		return true;
+	}
+
+	bool scaleY(float scale)
+	{
+		//don't attempt to scale the axis direction as it changes the position of the rect
+		if (m_current_axis == Axis_t::Y) return false;
+
+		this->scale({ 1, scale, 1 });
+		return true;
+	}
+
+	bool scaleZ(float scale)
+	{
+		//don't attempt to scale the axis direction as it changes the position of the rect
+		if (m_current_axis == Axis_t::Z) return false;
+
+		this->scale({ 1, 1, scale });
+		return true;
+	}
+
+	template<Axis_t axis>
+	void scaleAndMove(float scale) {}
+
+	template<>
+	void scaleAndMove<Axis_t::X>(float scale)
+	{
+		this->scale({scale,1,1}, { 0.5f,0,0 });
+	}
+
+	template<>
+	void scaleAndMove<Axis_t::Y>(float scale)
+	{
+		this->scale({ 1,scale,1 }, { 0,0.5f,0 });
+	}
+
+	template<>
+	void scaleAndMove<Axis_t::Z>(float scale)
+	{
+		this->scale({ 1,1,scale }, { 0,0,0.5f });
+	}
+
+	/// <summary>
+	/// Merges the current face and the given face given they meet the correct requirements.
+	/// A naive implementation assuming the use case is what is being done is the GM algorithm, 
+  /// not generalized for other use
+	/// </summary>
+	/// <param name="other_rect">The rect attempting to be merged with</param>
+	/// <returns></returns>
+	template<Axis_t check_axis, Axis_t merge_axis>
+	bool mergeRects(const Rect &other_rect)
+	{
+		//if the rects aren't on the same axis then don't attempt to merge them
+		if (other_rect.getAxis() != m_current_axis) return false;
+
+		//if the rects aren't on the same plane, then dont attempt to merge them
+		if (other_rect.axisPos() != this->axisPos()) return false;
+
+		if (other_rect.axisPos(check_axis) != this->axisPos(check_axis)) return false;
+
+		//if the axis that is being merged into doesn't have the same scale 
+		// (i.e. merging in the x axis along z requires the y scale to be the same), return false
+		if (other_rect.axisScale(check_axis) != this->axisScale(check_axis)) return false;
+
+		if (this->axisPos(merge_axis) + this->axisScale(merge_axis)!= other_rect.axisPos(merge_axis)) return false;
+
+		float new_scale = this->axisScale(merge_axis) + other_rect.axisScale(merge_axis);
+
+		scaleAndMove<merge_axis>(1.f / this->axisScale(merge_axis));
+
+		scaleAndMove<merge_axis>(new_scale);
+
+		return true;
 	}
 
 	Axis_t getAxis() const { return m_current_axis; }
 
+	float axisPos(Axis_t axis = Axis_t::EMPTY) const
+	{
+		if (axis == Axis_t::EMPTY) axis = m_current_axis;
+
+		switch (axis)
+		{
+			case Axis_t::X: return m_position.x;
+			case Axis_t::Y: return m_position.y;
+			case Axis_t::Z: return m_position.z;
+		}
+		return NAN;
+	}
+
+	float axisScale(Axis_t axis = Axis_t::EMPTY) const
+	{
+		if (axis == Axis_t::EMPTY) axis = m_current_axis;
+
+		switch (axis)
+		{
+			case Axis_t::X: return m_scale.x;
+			case Axis_t::Y: return m_scale.y;
+			case Axis_t::Z: return m_scale.z;
+		}
+		return NAN;
+	}
+
 private:
-	Axis_t m_current_axis;
-	glm::vec3 m_rect_position;
+	Axis_t m_current_axis = Axis_t::EMPTY;
 };

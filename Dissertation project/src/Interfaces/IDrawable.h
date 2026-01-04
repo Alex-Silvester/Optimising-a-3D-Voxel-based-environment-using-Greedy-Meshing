@@ -3,6 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <vector>
+#include <print>
 
 #include "../Shader Types/CubeShader.h"
 #include "../Window/DrawWindow.h"
@@ -10,11 +11,6 @@
 class IDrawable
 {
 public:
-
-  ~IDrawable()
-  {
-    delete m_shader;
-  }
 
   //default initialisation for the drawable object
   virtual void initialise(glm::mat4& projection) = 0;
@@ -47,10 +43,21 @@ public:
     // pass projection matrix to shader (note that in this case it could change every frame)
     m_shader->setMat4("projection", projection);
   }
-  
-  void setVertices(const std::vector<float>& m_vertices)
+
+  void setShader(Shader* shader)
   {
-    this->m_vertices = m_vertices;
+    m_shader = (Shader*)(shader);
+
+    m_shader->use();
+    m_shader->setVec3("objectColor", 1.0f, 1.0f, 1.0f);
+    m_shader->setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+    m_shader->setVec3("lightPos", glm::vec3(0, 0, 0));
+    m_shader->setInt("intensity", 1);
+  }
+  
+  void setVertices(const std::vector<float>& vertices)
+  {
+    m_vertices = vertices;
   }
 
   void setVertices(const float* vertices, int vals)
@@ -99,9 +106,9 @@ public:
     m_position = pos;
   }
 
-  void scale(glm::vec3 scale)
+  void scale(glm::vec3 scale, glm::vec3 offset = {0,0,0})
   {
-    m_scale = scale;
+    m_scale *= scale;
 
     for (int i = 0; i < m_vertices.size(); i++)
     {
@@ -109,15 +116,21 @@ public:
       {
         if (i % 3 == 0)
         {
-          m_vertices[i] *= m_scale.x;
+          m_vertices[i] += offset.x;
+          m_vertices[i] *= scale.x;
+          m_vertices[i] -= offset.x;
         }
         else if (i % 3 == 1)
         {
-          m_vertices[i] *= m_scale.y;
+          m_vertices[i] += offset.y;
+          m_vertices[i] *= scale.y;
+          m_vertices[i] -= offset.y;
         }
         else
         {
-          m_vertices[i] *= m_scale.z;
+          m_vertices[i] += offset.z;
+          m_vertices[i] *= scale.z;
+          m_vertices[i] -= offset.z;
         }
       }
     }
@@ -156,6 +169,8 @@ public:
     return layer;
   }
 
+  const glm::vec3 &getScale() const { return m_scale; }
+
 private:
 
   friend class DrawWindow;
@@ -180,14 +195,17 @@ private:
 
     glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
 	}
+  
+protected:
+
+  glm::vec3 m_position = { 0,0,0 };
+  glm::vec3 m_scale = { 1.0f , 1.0f, 1.0f };
 
 private:
 
-  glm::vec3 m_position = { 0,0,0 };
 	std::vector<float> m_vertices;
   Shader* m_shader = nullptr;
 
-  glm::vec3 m_scale = { 1.0f , 1.0f, 1.0f };
 
   int layer = 0;
 };

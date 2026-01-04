@@ -12,9 +12,9 @@
 
 #include "shapes/Cube.h"
 
-#define FACE_SORT true
+#define GREEDY_MESH true
 #define FACE_CULL true
-#define USE_INSTANCING true
+#define USE_INSTANCING false
 
 #define SEARCH_THREADS 10
 
@@ -54,6 +54,11 @@ private:
 
 	//returns true if the face is covered and shouldn't be shown
 	bool isFaceCovered(const Rect* face, const std::vector<Rect*>& other_faces) const;
+
+	void meshFaces();
+
+	template<Axis_t check_axis, Axis_t merge_axis>
+	void greedyMesh();
 
 	static constexpr Axis_t nextAxis(Axis_t axis)
 	{
@@ -134,20 +139,22 @@ void Axis::addFaces(const std::vector<Cube>& voxels, std::mutex& mtx)
 		faces.insert(faces.end(), std::make_move_iterator(temp_vectors[i].begin()), std::make_move_iterator(temp_vectors[i].end()));
 	}
 
+#endif
+
+#if GREEDY_MESH
+
+	std::sort(faces.begin(), faces.end(), [this](Rect* face_a, Rect* face_b) {return faceSorter(face_a, face_b); });
+
+	meshFaces();
+
+#endif
+
 #if USE_INSTANCING
-	for (auto& face : faces)
+	for (auto &face : faces)
 	{
 		std::vector<float> global_vertices = face->getVerticesWithPosition();
 		m_instanced_vertices.insert(m_instanced_vertices.end(), std::make_move_iterator(global_vertices.begin()), std::make_move_iterator(global_vertices.end()));
 	}
-#endif
-
-#endif
-
-#if FACE_SORT
-
-	std::sort(faces.begin(), faces.end(), [this](Rect* face_a, Rect* face_b) {return faceSorter(face_a, face_b); });
-
 #endif
 }
 
@@ -235,4 +242,47 @@ bool Axis::isFaceCovered(const Rect* face, const std::vector<Rect*>& other_faces
 	}
 
 	return false;
+}
+
+void Axis::meshFaces()
+{
+	if(m_axis == Axis_t::X)
+	{
+		greedyMesh<Y, Z>();
+		greedyMesh<Z, Y>();
+		return;
+	}
+
+	if (m_axis == Axis_t::Y)
+	{
+		greedyMesh<Z, X>();
+		greedyMesh<X, Z>();
+		return;
+	}
+
+	if (m_axis == Axis_t::Z)
+	{
+		greedyMesh<X, Y>();
+		greedyMesh<Y, X>();
+		return;
+	}
+}
+
+template<Axis_t check_axis, Axis_t merge_axis>
+inline void Axis::greedyMesh()
+{
+	for (int curr_idx = 0; curr_idx < faces.size() - 1; curr_idx++)
+	{
+		for (int next_idx = curr_idx + 1; next_idx < faces.size();)
+		{
+			if (faces[curr_idx]->mergeRects<check_axis, merge_axis>(*faces[next_idx]))
+			{
+				faces.erase(faces.begin() + next_idx);
+			}
+			else
+			{
+				next_idx++;
+			}
+		}
+	}
 }

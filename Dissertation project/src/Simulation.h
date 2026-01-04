@@ -52,7 +52,7 @@ private:
 
 	DrawWindow m_window;
 
-	static constexpr glm::vec<3, int> m_world_size = {20,20,20};
+	static constexpr glm::vec<3, int> m_world_size = {20,15,20};
 	std::vector<Cube> cubes;
 
 	CubeShader cube_shader;
@@ -77,6 +77,10 @@ bool Simulation::init()
 	worldCreation();
 
 	axesSplitting();
+
+	cube_shader.setLightPosition(m_world_size.x / 2.f, m_world_size.y, m_world_size.z / 2.f);
+	cube_shader.setAmbientLightStrength(0.5f);
+	cube_shader.setLightIntensity(1.f);
 
 	return true;
 }
@@ -147,10 +151,6 @@ void Simulation::worldCreation()
 #endif
 
 		cubes.emplace_back(projection, pos, cube_shader.shaderPtr());
-
-		cube_shader.setLightPosition(m_world_size.x / 2.f, m_world_size.y, m_world_size.z / 2.f);
-		cube_shader.setAmbientLightStrength(0.5f);
-		cube_shader.setLightIntensity(1.f);
 	}
 
 	//ending the world creation time
