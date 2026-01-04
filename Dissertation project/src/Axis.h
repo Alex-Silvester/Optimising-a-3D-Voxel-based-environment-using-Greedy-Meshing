@@ -14,7 +14,7 @@
 
 #define GREEDY_MESH true
 #define FACE_CULL true
-#define USE_INSTANCING true
+#define USE_INSTANCING false
 
 #define SEARCH_THREADS 10
 
@@ -56,6 +56,9 @@ private:
 	bool isFaceCovered(const Rect* face, const std::vector<Rect*>& other_faces) const;
 
 	void meshFaces();
+
+	template<Axis_t check_axis, Axis_t merge_axis>
+	void greedyMesh();
 
 	static constexpr Axis_t nextAxis(Axis_t axis)
 	{
@@ -136,14 +139,6 @@ void Axis::addFaces(const std::vector<Cube>& voxels, std::mutex& mtx)
 		faces.insert(faces.end(), std::make_move_iterator(temp_vectors[i].begin()), std::make_move_iterator(temp_vectors[i].end()));
 	}
 
-#if USE_INSTANCING
-	for (auto& face : faces)
-	{
-		std::vector<float> global_vertices = face->getVerticesWithPosition();
-		m_instanced_vertices.insert(m_instanced_vertices.end(), std::make_move_iterator(global_vertices.begin()), std::make_move_iterator(global_vertices.end()));
-	}
-#endif
-
 #endif
 
 #if GREEDY_MESH
@@ -152,6 +147,14 @@ void Axis::addFaces(const std::vector<Cube>& voxels, std::mutex& mtx)
 
 	meshFaces();
 
+#endif
+
+#if USE_INSTANCING
+	for (auto &face : faces)
+	{
+		std::vector<float> global_vertices = face->getVerticesWithPosition();
+		m_instanced_vertices.insert(m_instanced_vertices.end(), std::make_move_iterator(global_vertices.begin()), std::make_move_iterator(global_vertices.end()));
+	}
 #endif
 }
 
@@ -243,13 +246,43 @@ bool Axis::isFaceCovered(const Rect* face, const std::vector<Rect*>& other_faces
 
 void Axis::meshFaces()
 {
-	for (int i = 0; i < faces.size() - 1; i++)
+	if(m_axis == Axis_t::X)
 	{
-		//if the next face to be checked isn't on the same slice as the current, then go to the next face/slice
-		if (axis_pos(faces[i]) != axis_pos(faces[i + 1])) continue;
+		greedyMesh<Y, Z>();
+		greedyMesh<Z, Y>();
+		return;
+	}
 
-		//check all faces in one axis and mesh
+	if (m_axis == Axis_t::Y)
+	{
+		greedyMesh<Z, X>();
+		greedyMesh<X, Z>();
+		return;
+	}
 
-		//check all faces in the other axis and mesh the (now) larger faces
+	if (m_axis == Axis_t::Z)
+	{
+		greedyMesh<X, Y>();
+		greedyMesh<Y, X>();
+		return;
+	}
+}
+
+template<Axis_t check_axis, Axis_t merge_axis>
+inline void Axis::greedyMesh()
+{
+	for (int curr_idx = 0; curr_idx < faces.size() - 1; curr_idx++)
+	{
+		for (int next_idx = curr_idx + 1; next_idx < faces.size();)
+		{
+			if (faces[curr_idx]->mergeRects<check_axis, merge_axis>(*faces[next_idx]))
+			{
+				faces.erase(faces.begin() + next_idx);
+			}
+			else
+			{
+				next_idx++;
+			}
+		}
 	}
 }

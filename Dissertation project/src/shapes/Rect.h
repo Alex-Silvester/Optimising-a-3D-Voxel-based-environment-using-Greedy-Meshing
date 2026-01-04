@@ -177,22 +177,30 @@ public:
 		//if the rects aren't on the same plane, then dont attempt to merge them
 		if (other_rect.axisPos() != this->axisPos()) return false;
 
+		if (other_rect.axisPos(check_axis) != this->axisPos(check_axis)) return false;
+
 		//if the axis that is being merged into doesn't have the same scale 
 		// (i.e. merging in the x axis along z requires the y scale to be the same), return false
 		if (other_rect.axisScale(check_axis) != this->axisScale(check_axis)) return false;
 
+		if (this->axisPos(merge_axis) + this->axisScale(merge_axis)!= other_rect.axisPos(merge_axis)) return false;
+
 		float new_scale = this->axisScale(merge_axis) + other_rect.axisScale(merge_axis);
 
-		scaleAndMove<merge_axis>(new_scale / this->axisScale(merge_axis));
+		scaleAndMove<merge_axis>(1.f / this->axisScale(merge_axis));
+
+		scaleAndMove<merge_axis>(new_scale);
 
 		return true;
 	}
 
 	Axis_t getAxis() const { return m_current_axis; }
 
-	float axisPos() const
+	float axisPos(Axis_t axis = Axis_t::EMPTY) const
 	{
-		switch (m_current_axis)
+		if (axis == Axis_t::EMPTY) axis = m_current_axis;
+
+		switch (axis)
 		{
 			case Axis_t::X: return m_position.x;
 			case Axis_t::Y: return m_position.y;

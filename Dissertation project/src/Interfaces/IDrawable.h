@@ -108,7 +108,7 @@ public:
 
   void scale(glm::vec3 scale, glm::vec3 offset = {0,0,0})
   {
-    m_scale = scale;
+    m_scale *= scale;
 
     for (int i = 0; i < m_vertices.size(); i++)
     {
@@ -117,19 +117,19 @@ public:
         if (i % 3 == 0)
         {
           m_vertices[i] += offset.x;
-          m_vertices[i] *= m_scale.x;
+          m_vertices[i] *= scale.x;
           m_vertices[i] -= offset.x;
         }
         else if (i % 3 == 1)
         {
           m_vertices[i] += offset.y;
-          m_vertices[i] *= m_scale.y;
+          m_vertices[i] *= scale.y;
           m_vertices[i] -= offset.y;
         }
         else
         {
           m_vertices[i] += offset.z;
-          m_vertices[i] *= m_scale.z;
+          m_vertices[i] *= scale.z;
           m_vertices[i] -= offset.z;
         }
       }

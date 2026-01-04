@@ -52,7 +52,7 @@ private:
 
 	DrawWindow m_window;
 
-	static constexpr glm::vec<3, int> m_world_size = {20,20,20};
+	static constexpr glm::vec<3, int> m_world_size = {20,15,20};
 	std::vector<Cube> cubes;
 
 	CubeShader cube_shader;
@@ -67,10 +67,6 @@ private:
 	glm::mat4 projection;
 
 	std::mutex mtx;
-
-	Rect test_rect;
-	Rect test_rect_2;
-	Rect test_rect_3;
 };
 
 bool Simulation::init()
@@ -85,24 +81,6 @@ bool Simulation::init()
 	cube_shader.setLightPosition(m_world_size.x / 2.f, m_world_size.y, m_world_size.z / 2.f);
 	cube_shader.setAmbientLightStrength(0.5f);
 	cube_shader.setLightIntensity(1.f);
-
-	test_rect.initialise(projection, cube_shader.shaderPtr());
-	test_rect.setFacing(Axis_t::X);
-	test_rect.setPosition({-3, 0, 0});
-
-	test_rect_2.initialise(projection, cube_shader.shaderPtr());
-	test_rect_2.setFacing(Axis_t::X);
-	test_rect_2.setPosition({ -3, 0, 1 });
-
-	test_rect_3.initialise(projection, cube_shader.shaderPtr());
-	test_rect_3.setFacing(Axis_t::X);
-	test_rect_3.setPosition({ -3, 0, 2 });
-
-	if (test_rect.mergeRects<Y,Z>(test_rect_2)) printf("Success");
-	else printf("Failure");
-
-	if (test_rect.mergeRects<Y,Z>(test_rect_3)) printf("Success");
-	else printf("Failure");
 
 	return true;
 }
@@ -148,9 +126,6 @@ void Simulation::render()
 	m_window.draw(x_axis);
 	m_window.draw(y_axis);
 	m_window.draw(z_axis);
-
-	m_window.draw(test_rect);
-	//m_window.draw(test_rect_2);
 }
 
 void Simulation::worldCreation()
