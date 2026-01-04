@@ -1,12 +1,23 @@
 #ifndef SHADER_H
 #define SHADER_H
 
+#define CHECK_ERRORS false
+
 #include <glm/glm.hpp>
 
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <iostream>
+
+struct Color
+{
+public:
+  Color(float _r, float _g, float _b) : r(_r), g(_g), b(_b) {}
+  Color(const glm::vec3& c) : r(c.x), g(c.y), b(c.z) {}
+public:
+  float r, g, b;
+};
 
 class Shader
 {
@@ -53,18 +64,30 @@ public:
     vertex = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertex, 1, &vShaderCode, NULL);
     glCompileShader(vertex);
+
+#if CHECK_ERRORS
     checkCompileErrors(vertex, "VERTEX");
+#endif
+
     // fragment Shader
     fragment = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragment, 1, &fShaderCode, NULL);
     glCompileShader(fragment);
+
+#if CHECK_ERRORS
     checkCompileErrors(fragment, "FRAGMENT");
+#endif
+
     // shader Program
     ID = glCreateProgram();
     glAttachShader(ID, vertex);
     glAttachShader(ID, fragment);
     glLinkProgram(ID);
+
+#if CHECK_ERRORS
     checkCompileErrors(ID, "PROGRAM");
+#endif 
+
     // delete the shaders as they're linked into our program now and no longer necessary
     glDeleteShader(vertex);
     glDeleteShader(fragment);

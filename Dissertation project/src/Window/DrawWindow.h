@@ -4,6 +4,8 @@
 #include "../camera.h"
 #include "../Interfaces/IDrawable.h"
 
+#define CULL_FACES true
+
 class DrawWindow : public WindowBase
 {
 public:
@@ -16,6 +18,29 @@ public:
     drawable.draw(VAO, VBO, view, *this);
   }
 
+  void draw(const std::vector<float>& vertices, Shader* shader)
+  {
+    glm::mat4 view = camera.GetViewMatrix();
+
+    shader->use();
+    shader->setMat4("view", view);
+    shader->setVec3("position", {0,0,0});
+
+    // render
+    glBindVertexArray(VAO);
+
+    //explicitly bind the VBO
+    //glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+
+    // calculate the model matrix for each object and pass it to shader before drawing
+    glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+    model = glm::translate(model, glm::vec3(0.f));
+    shader->setMat4("model", model);
+
+    glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 9);
+  }
+
   bool initialise() override
   {
     if (!WindowBase::initialise())
@@ -26,8 +51,12 @@ public:
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_CULL_FACE);
-    //glFrontFace(GL_CW);
+
+#if CULL_FACES
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CW);
+#endif
+
     glEnable(GL_MULTISAMPLE);
 
     glGenVertexArrays(1, &VAO);
@@ -48,11 +77,18 @@ public:
     // normal attribute
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
+
+    return true;
   }
 
   const Camera& getCamera() const
   {
     return camera;
+  }
+
+  bool paused()
+  {
+    return m_paused;
   }
 
 private:
@@ -164,6 +200,27 @@ private:
     {
       tab_pressed = false;
     }
+
+    //Screen pause
+    if (keyPressed(GLFW_KEY_ENTER) && !enter_pressed)
+    {
+      enter_pressed = true;
+      m_paused = !m_paused;
+    }
+    if (keyReleased(GLFW_KEY_ENTER))
+    {
+      enter_pressed = false;
+    }
+  }
+
+  bool keyPressed(int key)
+  {
+    return glfwGetKey(m_window, key) == GLFW_PRESS;
+  }
+
+  bool keyReleased(int key)
+  {
+    return glfwGetKey(m_window, key) == GLFW_RELEASE;
   }
 
 private:
@@ -175,8 +232,11 @@ private:
   bool  space_pressed = false;
   bool tab_pressed = false;
   bool f5_pressed = false;
+  bool enter_pressed = false;
 
 	Camera camera{ glm::vec3(0.f, 0.f, 0.f) , {0.f,1.f,0.f}, 90.f, 0.f };
 
   unsigned int VAO = 0, VBO = 0;
+
+  bool m_paused = false;
 };
