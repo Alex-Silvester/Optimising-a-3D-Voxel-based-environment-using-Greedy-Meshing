@@ -48,6 +48,11 @@ private:
 
 	inline void axesSplitting();
 
+	float magnitudeSqaured(const glm::vec3 &vector)
+	{
+		return vector.x * vector.x + vector.y * vector.y + vector.z * vector.z;
+	}
+
 private:
 
 	DrawWindow m_window;
@@ -67,6 +72,11 @@ private:
 	glm::mat4 projection;
 
 	std::mutex mtx;
+
+
+#if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
+	std::vector<Rect *> faces = {};
+#endif
 };
 
 bool Simulation::init()
@@ -77,6 +87,26 @@ bool Simulation::init()
 	worldCreation();
 
 	axesSplitting();
+
+#if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
+	faces.resize(x_axis.getFaces().size() + y_axis.getFaces().size() + z_axis.getFaces().size());
+	int i = 0;
+	for (Rect *face : x_axis.getFaces())
+	{
+		faces[i] = std::move(face);
+		i++;
+	}
+	for (Rect *face : y_axis.getFaces())
+	{
+		faces[i] = std::move(face);
+		i++;
+	}
+	for (Rect *face : z_axis.getFaces())
+	{
+		faces[i] = std::move(face);
+		i++;
+	}
+#endif
 
 	cube_shader.setLightPosition(m_world_size.x / 2.f, m_world_size.y, m_world_size.z / 2.f);
 	cube_shader.setAmbientLightStrength(0.5f);
@@ -118,14 +148,28 @@ void Simulation::run()
 
 void Simulation::update()
 {
-
+#if OCCLUSION_CULL_QUERY == true
+	std::sort(faces.begin(), faces.end(), [this](Rect *face1, Rect *face2)
+	{
+		return
+			magnitudeSqaured(face1->getPosition() - m_window.getCamera().Position) <
+			magnitudeSqaured(face2->getPosition() - m_window.getCamera().Position);
+	});
+#endif
 }
 
 void Simulation::render()
 {
+#if COLLECT_FACES == true
+	for(Rect*& face : faces)
+	{
+		m_window.draw(*face);
+	}
+#else
 	m_window.draw(x_axis);
 	m_window.draw(y_axis);
 	m_window.draw(z_axis);
+#endif
 }
 
 void Simulation::worldCreation()

@@ -12,9 +12,7 @@
 
 #include "shapes/Cube.h"
 
-#define GREEDY_MESH true
-#define FACE_CULL true
-#define USE_INSTANCING false
+#include "Helpers/Settings.h"
 
 #define SEARCH_THREADS 10
 
@@ -39,6 +37,11 @@ public:
 	void initialise(glm::mat4& projection, Shader* shader) override {}
 
 	void addFaces(const std::vector<Cube>& voxels, std::mutex& mtx);
+
+	const std::vector<Rect *>& getFaces()
+	{
+		return faces;
+	}
 
 private:
 
