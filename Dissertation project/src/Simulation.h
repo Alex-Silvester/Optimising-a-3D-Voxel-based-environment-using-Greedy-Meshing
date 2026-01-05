@@ -10,7 +10,7 @@
 #include "Axis.h"
 #include "Noise/PerlinNoise.h"
 
-#define USE_NOISE true
+#include "Helpers/Settings.h"
 
 class Simulation
 {

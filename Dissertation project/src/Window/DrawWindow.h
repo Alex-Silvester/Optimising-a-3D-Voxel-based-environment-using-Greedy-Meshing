@@ -4,7 +4,7 @@
 #include "../camera.h"
 #include "../Interfaces/IDrawable.h"
 
-#define CULL_FACES true
+#include "../Helpers/Settings.h"
 
 class DrawWindow : public WindowBase
 {
@@ -52,7 +52,7 @@ public:
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
-#if CULL_FACES
+#if CULL_FACES == true
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CW);
 #endif
@@ -234,7 +234,7 @@ private:
   bool f5_pressed = false;
   bool enter_pressed = false;
 
-	Camera camera{ glm::vec3(0.f, 0.f, 0.f) , {0.f,1.f,0.f}, 90.f, 0.f };
+	Camera camera{ glm::vec3(10.f, 7.5f, -10.f) , {0.f,1.f,0.f}, 90.f, 0.f };
 
   unsigned int VAO = 0, VBO = 0;
 

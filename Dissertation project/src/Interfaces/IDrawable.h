@@ -8,6 +8,8 @@
 #include "../Shader Types/CubeShader.h"
 #include "../Window/DrawWindow.h"
 
+#include "../Helpers/Settings.h"
+
 class IDrawable
 {
 public:
