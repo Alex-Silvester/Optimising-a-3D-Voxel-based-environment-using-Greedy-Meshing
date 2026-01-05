@@ -187,7 +187,7 @@ private:
     glBindVertexArray(VAO);
 
     //explicitly bind the VBO
-		//glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(float), &m_vertices[0], GL_STATIC_DRAW);
 
     // calculate the model matrix for each object and pass it to shader before drawing
@@ -195,7 +195,37 @@ private:
     model = glm::translate(model, glm::vec3(0.f));
     m_shader->setMat4("model", model);
 
+  #if OCCLUSION_CULL_QUERY == true
+    glGenQueries(1, &occ_query);
+
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDepthMask(GL_FALSE);
+
+    glBeginQuery(GL_ANY_SAMPLES_PASSED, occ_query);
+
     glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+
+    glEndQuery(GL_ANY_SAMPLES_PASSED);
+
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthMask(GL_TRUE);
+
+    glGetQueryObjectiv(occ_query, GL_QUERY_RESULT, &passed);
+    
+
+    if (prev_passed)
+    {
+      glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+      prev_passed = (passed != 0);
+    }
+    else
+    {
+      prev_passed = (passed != 0);
+      return;
+    }
+  #else
+    glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+  #endif
 	}
   
 protected:
@@ -208,6 +238,11 @@ private:
 	std::vector<float> m_vertices;
   Shader* m_shader = nullptr;
 
+#if OCCLUSION_CULL_QUERY == true
+  GLuint occ_query;
+  int passed = 0;
+#endif
 
+  bool prev_passed = true;
   int layer = 0;
 };
