@@ -3,11 +3,21 @@
 
 /*----------Simulation----------*/
 
+//Amount of samples taken for the average fps test
+#define AVERAGE_FPS_SAMPLES 20
+
+//space between samples being taken for the average fps in seconds 
+// (or how much time it takes to change the average fps value)
+#define FPS_SAMPLE_SPACING 0.1
+
 //Generating the environment
 #define USE_NOISE true
 
 //Take faces from the axis objects and put them into one array
-#define COLLECT_FACES true
+#define COLLECT_FACES false
+
+//Does a pre-pass on the z-buffer to fill it out before rendering all of the geometry fully
+#define Z_BUFFER_PRE_PASS false
 
 /*----------Simulation----------*/
 
@@ -29,7 +39,7 @@
 #define GREEDY_MESH true
 
 //Collect all of the faces into a single array for drawing the axis (not currently usable with COLLECT_FACES)
-#define USE_INSTANCING false
+#define USE_INSTANCING true
 
 /*-------------Axis-------------*/
 

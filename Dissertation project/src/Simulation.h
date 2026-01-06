@@ -2,6 +2,7 @@
 
 #include <thread>
 #include <atomic>
+#include <queue>
 
 #include "Timer.h"
 
@@ -11,6 +12,24 @@
 #include "Noise/PerlinNoise.h"
 
 #include "Helpers/Settings.h"
+
+#include <cmath>
+#include <cstdio>
+#include <iostream>
+#include <mutex>
+#include <ostream>
+#include <print>
+#include <ratio>
+#include <string>
+#include <vector>
+#include <glm/detail/func_trigonometric.inl>
+#include <glm/detail/type_vec3.hpp>
+#include <glm/ext/matrix_clip_space.inl>
+#include <glm/fwd.hpp>
+
+#include "Shader Types/CubeShader.h"
+#include "shapes/Cube.h"
+#include "shapes/Rect.h"
 
 class Simulation
 {
@@ -36,11 +55,46 @@ private:
 
 	void displayFPS()
 	{
+		std::queue<float> fps_values;
+		float average_fps = 0;
+		double time_passed = 0;
+		double sample_timer = 0;
+		
+		for(int i = 0; i < AVERAGE_FPS_SAMPLES; i++)
+		{
+			fps_values.emplace(0);
+		}
+
 		while (m_window_open)
 		{
-			std::string display_text = "\x1b[1A\x1b[2K";
-			display_text += std::to_string(1.f / m_fps);
-			std::cout << display_text << std::endl;
+			if (m_fps == 0) continue;
+
+			time_passed += m_fps;
+			sample_timer += m_fps;
+
+			if(sample_timer > FPS_SAMPLE_SPACING)
+			{
+				average_fps = 0;
+				sample_timer = 0;
+
+				fps_values.pop();
+
+				fps_values.emplace(1.f / m_fps);
+
+				std::queue<float> temp_queue = fps_values;
+
+				for (int i = 0; i < AVERAGE_FPS_SAMPLES; i++)
+				{
+					average_fps += temp_queue.front();
+					temp_queue.pop();
+				}
+				average_fps /= AVERAGE_FPS_SAMPLES;
+			}
+
+			std::println("\x1b[1A\x1b[2KFPS: {} Average FPS: {} Time: {}", (int)(1.f/m_fps), (int)average_fps, (int)time_passed);
+
+			//reset the fps value to check when the main loop has completed a frame
+			m_fps = 0;
 		}
 	}
 
@@ -53,11 +107,13 @@ private:
 		return vector.x * vector.x + vector.y * vector.y + vector.z * vector.z;
 	}
 
+	void drawFaces();
+
 private:
 
 	DrawWindow m_window;
 
-	static constexpr glm::vec<3, int> m_world_size = {20,15,20};
+	static constexpr glm::vec<3, int> m_world_size = {100, 15, 100};
 	std::vector<Cube> cubes;
 
 	CubeShader cube_shader;
@@ -160,15 +216,28 @@ void Simulation::update()
 
 void Simulation::render()
 {
-#if COLLECT_FACES == true
-	for(Rect*& face : faces)
-	{
-		m_window.draw(*face);
-	}
+#if Z_BUFFER_PRE_PASS == true
+
+	// z-prepass
+	//glEnable(GL_DEPTH_TEST);  // We want depth test !
+	glDepthFunc(GL_LESS);   // We want to get the nearest pixels
+	glColorMask(0, 0, 0, 0);  // Disable color, it's useless, we only want depth.
+	glDepthMask(GL_TRUE);     // Ask z writing
+
+	drawFaces();
+
+	// real render
+	//glEnable(GL_DEPTH_TEST);  // We still want depth test
+	glDepthFunc(GL_LEQUAL);   // EQUAL should work, too. (Only draw pixels if they are the closest ones)
+	glColorMask(1, 1, 1, 1);  // We want color this time
+	glDepthMask(GL_FALSE);    // Writing the z component is useless now, we already have it
+
+	drawFaces();
+
+	glDepthMask(GL_TRUE);
+
 #else
-	m_window.draw(x_axis);
-	m_window.draw(y_axis);
-	m_window.draw(z_axis);
+	drawFaces();
 #endif
 }
 
@@ -220,4 +289,18 @@ inline void Simulation::axesSplitting()
 	printf("Axes splitting time: ");
 	std::cout << std::to_string(timer.End()) << std::endl;
 	printf("\n");
+}
+
+inline void Simulation::drawFaces()
+{
+#if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
+	for (Rect *&face : faces)
+	{
+		m_window.draw(*face);
+	}
+#else
+	m_window.draw(x_axis);
+	m_window.draw(y_axis);
+	m_window.draw(z_axis);
+#endif
 }
