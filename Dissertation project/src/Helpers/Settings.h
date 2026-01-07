@@ -10,6 +10,9 @@
 // (or how much time it takes to change the average fps value)
 #define FPS_SAMPLE_SPACING 0.1
 
+//whether imgui is enabled or not
+#define USE_IMGUI true
+
 //Generating the environment
 #define USE_NOISE true
 

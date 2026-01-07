@@ -22,14 +22,14 @@
 #include <ratio>
 #include <string>
 #include <vector>
-#include <glm/detail/func_trigonometric.inl>
-#include <glm/detail/type_vec3.hpp>
-#include <glm/ext/matrix_clip_space.inl>
-#include <glm/fwd.hpp>
 
 #include "Shader Types/CubeShader.h"
 #include "shapes/Cube.h"
 #include "shapes/Rect.h"
+
+#include "imgui-1.92.5/imgui.h"
+#include "imgui-1.92.5/backends/imgui_impl_glfw.h"
+#include "imgui-1.92.5/backends/imgui_impl_opengl3.h"
 
 class Simulation
 {
@@ -55,11 +55,6 @@ private:
 
 	void displayFPS()
 	{
-		std::queue<float> fps_values;
-		float average_fps = 0;
-		double time_passed = 0;
-		double sample_timer = 0;
-		
 		for(int i = 0; i < AVERAGE_FPS_SAMPLES; i++)
 		{
 			fps_values.emplace(0);
@@ -113,7 +108,7 @@ private:
 
 	DrawWindow m_window;
 
-	static constexpr glm::vec<3, int> m_world_size = {100, 15, 100};
+	static constexpr glm::vec<3, int> m_world_size = {100, 100, 100};
 	std::vector<Cube> cubes;
 
 	CubeShader cube_shader;
@@ -125,10 +120,17 @@ private:
 	std::atomic<double> m_fps = 0;
 	std::atomic<bool> m_window_open = true;
 
+	float m_world_creation_time = 0.f;
+	float m_axes_split_time = 0.f;
+
 	glm::mat4 projection;
 
 	std::mutex mtx;
 
+	std::queue<float> fps_values;
+	float average_fps = 0;
+	double time_passed = 0;
+	double sample_timer = 0;
 
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
 	std::vector<Rect *> faces = {};
@@ -138,7 +140,7 @@ private:
 bool Simulation::init()
 {
 	//initialise the window
-	m_window.initialise();
+	m_window.initialise(1080, 720, "window");
 
 	worldCreation();
 
@@ -173,9 +175,42 @@ bool Simulation::init()
 
 void Simulation::run()
 {
+	//use this thread if imgui isn't used to get mildly more accurate fps measurements
+#if USE_IMGUI == false
 	//create a separate thread for the FPS count to not 
 	// interfere too much with the simulation loop
 	std::thread fps_thread([this] { displayFPS(); });
+#else
+	const char *glsl_version = "#version 330 core";
+
+	float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor()); // Valid on GLFW 3.3+ only
+
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO &io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+
+	// Setup scaling
+	ImGuiStyle &style = ImGui::GetStyle();
+	style.ScaleAllSizes(main_scale);        // Bake a fixed style scale. (until we have a solution for dynamic style scaling, changing this requires resetting Style + calling this again)
+	style.FontScaleDpi = main_scale;        // Set initial font scale. (using io.ConfigDpiScaleFonts=true makes this unnecessary. We leave both here for documentation purpose)
+
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplGlfw_InitForOpenGL(m_window.getWindow(), true);
+
+	ImGui_ImplOpenGL3_Init(glsl_version);
+
+	for (int i = 0; i < AVERAGE_FPS_SAMPLES; i++)
+	{
+		fps_values.emplace(0);
+	}
+#endif
 
 	Timer<std::nano> timer;
 	while (m_window.open())
@@ -183,8 +218,6 @@ void Simulation::run()
 		timer.Start();
 
 		m_window.pollEvents();
-
-		if (m_window.paused()) continue;
 
 		update();
 
@@ -199,7 +232,14 @@ void Simulation::run()
 	}
 	m_window_open = false;
 
+#if USE_IMGUI == false
 	fps_thread.join();
+#else
+	// Cleanup
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+#endif
 }
 
 void Simulation::update()
@@ -211,6 +251,46 @@ void Simulation::update()
 			magnitudeSqaured(face1->getPosition() - m_window.getCamera().Position) <
 			magnitudeSqaured(face2->getPosition() - m_window.getCamera().Position);
 	});
+#endif
+
+#if USE_IMGUI == true
+
+	time_passed += m_fps;
+	sample_timer += m_fps;
+
+	if (sample_timer > FPS_SAMPLE_SPACING)
+	{
+		average_fps = 0;
+		sample_timer = 0;
+
+		fps_values.pop();
+
+		fps_values.emplace(1.f / m_fps);
+
+		std::queue<float> temp_queue = fps_values;
+
+		for (int i = 0; i < AVERAGE_FPS_SAMPLES; i++)
+		{
+			average_fps += temp_queue.front();
+			temp_queue.pop();
+		}
+		average_fps /= AVERAGE_FPS_SAMPLES;
+	}
+
+	// Start the Dear ImGui frame
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+
+	ImGui::Begin("Stats");                          // Create a window called "Hello, world!" and append into it.
+
+	ImGui::Text("Creation time: %.3f", m_world_creation_time); // Display some text (you can use a format strings too)
+	ImGui::Text("Axes split time: %.3f", m_axes_split_time);
+
+	ImGui::Text("FPS: %.f", 1.f / m_fps);
+	ImGui::Text("Average FPS: %.f", average_fps);
+
+	ImGui::End();
 #endif
 }
 
@@ -239,6 +319,12 @@ void Simulation::render()
 #else
 	drawFaces();
 #endif
+
+#if USE_IMGUI == true
+	ImGui::Render();
+
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+#endif
 }
 
 void Simulation::worldCreation()
@@ -266,9 +352,13 @@ void Simulation::worldCreation()
 		cubes.emplace_back(projection, pos, cube_shader.shaderPtr());
 	}
 
+	m_world_creation_time = timer.End();
+
+#if USE_IMGUI == false
 	//ending the world creation time
 	printf("Creation time: ");
-	std::cout << std::to_string(timer.End()) << std::endl;
+	std::cout << std::to_string(m_world_creation_time) << std::endl;
+#endif
 }
 
 inline void Simulation::axesSplitting()
@@ -286,9 +376,13 @@ inline void Simulation::axesSplitting()
 	y_thread.join();
 	z_thread.join();
 
+	m_axes_split_time = timer.End();
+
+#if USE_IMGUI == false
 	printf("Axes splitting time: ");
-	std::cout << std::to_string(timer.End()) << std::endl;
+	std::cout << std::to_string(m_axes_split_time) << std::endl;
 	printf("\n");
+#endif
 }
 
 inline void Simulation::drawFaces()
