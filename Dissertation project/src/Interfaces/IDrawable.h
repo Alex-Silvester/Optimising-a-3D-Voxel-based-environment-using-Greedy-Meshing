@@ -23,7 +23,7 @@ public:
     m_shader->init(vertex_path, fragment_path);
 
     m_shader->use();
-    m_shader->setVec3("objectColor", 1.0f, 1.0f, 1.0f);
+    m_shader->setVec3("objectColor", 1.f,0.f,0.f);
     m_shader->setVec3("lightColor", 1.0f, 1.0f, 1.0f);
     m_shader->setVec3("lightPos", glm::vec3(0,0,0));
     m_shader->setInt("intensity", 1);
@@ -173,6 +173,11 @@ public:
 
   const glm::vec3 &getScale() const { return m_scale; }
 
+  void setColor(const glm::vec3 &col)
+  {
+    m_color = col;
+  }
+
 private:
 
   friend class DrawWindow;
@@ -182,6 +187,8 @@ private:
     m_shader->use();
     m_shader->setMat4("view", view);
     m_shader->setVec3("position", m_position);
+    m_shader->setVec3("scale", m_scale);
+    m_shader->setVec3("objectColor", m_color);
 
     // render
     glBindVertexArray(VAO);
@@ -232,11 +239,13 @@ protected:
 
   glm::vec3 m_position = { 0,0,0 };
   glm::vec3 m_scale = { 1.0f , 1.0f, 1.0f };
+	std::vector<float> m_vertices;
 
 private:
 
-	std::vector<float> m_vertices;
   Shader* m_shader = nullptr;
+
+  glm::vec3 m_color = { 0.f,1.f,0.f };
 
 #if OCCLUSION_CULL_QUERY == true
   GLuint occ_query;

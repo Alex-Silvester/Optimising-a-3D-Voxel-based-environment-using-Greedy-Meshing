@@ -5,7 +5,6 @@ layout (location = 2) in vec3 aNormal;
 
 out vec3 Colour;
 
-out vec3 GlobalPos;
 out vec3 FragPos;
 out vec3 Normal;
 
@@ -16,10 +15,8 @@ uniform vec3 position;
 
 void main()
 {
-    GlobalPos = aPos + position;
-    FragPos = vec3(model * vec4(aPos, 1.0));
     Normal = aNormal;  
     
-    gl_Position = projection * view * vec4(FragPos + position, 1.0);
+    gl_Position = vec4(aPos, 1.0);;
 	Colour = aColour;
 } 

@@ -13,6 +13,9 @@
 //whether imgui is enabled or not
 #define USE_IMGUI true
 
+//show and get data from selected faces
+#define FACE_CHECKING true;
+
 //Generating the environment
 #define USE_NOISE true
 
@@ -42,7 +45,7 @@
 #define GREEDY_MESH true
 
 //Collect all of the faces into a single array for drawing the axis (not currently usable with COLLECT_FACES)
-#define USE_INSTANCING true
+#define USE_INSTANCING false
 
 /*-------------Axis-------------*/
 

@@ -18,13 +18,13 @@ enum Axis_t
 //back = positive-z
 static const int default_sqaure_vals = 54;
 static const float default_square[default_sqaure_vals] = {
-    0.5f, 0.5f, 0.f,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f,
-   -0.5f, 0.5f, 0.f,   0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
-   -0.5f,-0.5f, 0.f,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
+    0.5f, 0.5f, 0.f,   1.f, 1.f, 1.f,   0.f, 0.f, 0.f,
+   -0.5f, 0.5f, 0.f,   1.f, 1.f, 1.f,   0.f, 0.f, 0.f,
+   -0.5f,-0.5f, 0.f,   1.f, 1.f, 1.f,   0.f, 0.f, 0.f,
 
-   -0.5f,-0.5f, 0.f,   0.f, 0.f, 1.f,   0.f, 0.f, 0.f,
-    0.5f,-0.5f, 0.f,   0.f, 1.f, 0.f,   0.f, 0.f, 0.f,
-    0.5f, 0.5f, 0.f,   1.f, 0.f, 0.f,   0.f, 0.f, 0.f
+   -0.5f,-0.5f, 0.f,   1.f, 1.f, 1.f,   0.f, 0.f, 0.f,
+    0.5f,-0.5f, 0.f,   1.f, 1.f, 1.f,   0.f, 0.f, 0.f,
+    0.5f, 0.5f, 0.f,   1.f, 1.f, 1.f,   0.f, 0.f, 0.f
 };
 
 /// <summary>
@@ -64,6 +64,8 @@ public:
 			"Data/shaders/vertex/vertex_shader.txt",
 			"Data/shaders/fragment/fragment_shader.txt",
 			projection);
+
+		update_corner_positions = true;
 	}
 
 	void initialise(glm::mat4& projection, Shader* shader) override
@@ -73,6 +75,8 @@ public:
 
 		setShader(shader,
 			projection);
+
+		update_corner_positions = true;
 	}
 
 	void setFacing(Axis_t facing_axis, bool reverse_winding = false)
@@ -85,32 +89,36 @@ public:
 		if(reverse_winding)
 		{
 			setVertices({
-						0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f) * axis.z,   1.f, 0.f, 0.f,   -normal.x, normal.y, -normal.z,
-					 -0.5f * axis.x,   0.5f * axis.y,  0.5f * axis.z                   ,   0.f, 1.f, 0.f,   -normal.x, normal.y, -normal.z,
-					 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f) * axis.z,   0.f, 0.f, 1.f,   -normal.x, normal.y, -normal.z,
+						0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f) * axis.z,   1.f, 1.f, 1.f,   -normal.x, normal.y, -normal.z,
+					 -0.5f * axis.x,   0.5f * axis.y,  0.5f * axis.z                   ,   1.f, 1.f, 1.f,   -normal.x, normal.y, -normal.z,
+					 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f) * axis.z,   1.f, 1.f, 1.f,   -normal.x, normal.y, -normal.z,
 
-					 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f) * axis.z,   0.f, 0.f, 1.f,   -normal.x, normal.y, -normal.z,
-						0.5f * axis.x,  -0.5f * axis.y, -0.5f * axis.z,                      0.f, 1.f, 0.f,   -normal.x, normal.y, -normal.z,
-						0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f) * axis.z,   1.f, 0.f, 0.f,   -normal.x, normal.y, -normal.z
+					 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f) * axis.z,   1.f, 1.f, 1.f,   -normal.x, normal.y, -normal.z,
+						0.5f * axis.x,  -0.5f * axis.y, -0.5f * axis.z,                      1.f, 1.f, 1.f,   -normal.x, normal.y, -normal.z,
+						0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f) * axis.z,   1.f, 1.f, 1.f,   -normal.x, normal.y, -normal.z
 				});
 		}
 		else
 		{
 			setVertices({
-						0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f) * axis.z,   1.f, 0.f, 0.f,   normal.x, -normal.y, normal.z,
-						0.5f * axis.x,  -0.5f * axis.y, -0.5f * axis.z,                      0.f, 1.f, 0.f,   normal.x, -normal.y, normal.z,
-					 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f)* axis.z,    0.f, 0.f, 1.f,   normal.x, -normal.y, normal.z,
+						0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f) * axis.z,   1.f, 1.f, 1.f,   normal.x, -normal.y, normal.z,
+						0.5f * axis.x,  -0.5f * axis.y, -0.5f * axis.z,                      1.f, 1.f, 1.f,   normal.x, -normal.y, normal.z,
+					 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f)* axis.z,    1.f, 1.f, 1.f,   normal.x, -normal.y, normal.z,
 
-					 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f)* axis.z,    0.f, 0.f, 1.f,   normal.x, -normal.y, normal.z,
-					 -0.5f * axis.x,   0.5f * axis.y,  0.5f * axis.z                   ,   0.f, 1.f, 0.f,   normal.x, -normal.y, normal.z,
-						0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f)* axis.z,    1.f, 0.f, 0.f,   normal.x, -normal.y, normal.z
+					 -0.5f * axis.x,  -0.5f * axis.y,  (axis.x ? -0.5f : 0.5f)* axis.z,    1.f, 1.f, 1.f,   normal.x, -normal.y, normal.z,
+					 -0.5f * axis.x,   0.5f * axis.y,  0.5f * axis.z                   ,   1.f, 1.f, 1.f,   normal.x, -normal.y, normal.z,
+						0.5f * axis.x,   0.5f * axis.y,  (axis.x ? 0.5f : -0.5f)* axis.z,    1.f, 1.f, 1.f,   normal.x, -normal.y, normal.z
 				});
 		}
+
+		update_corner_positions = true;
 	}
 
 	void setPosition(const glm::vec3& vec) override
 	{
 		IDrawable::setPosition(vec);
+
+		update_corner_positions = true;
 	}
 
 	bool scaleX(float scale)
@@ -119,6 +127,9 @@ public:
 		if (m_current_axis == Axis_t::X) return false;
 
 		this->scale({ scale, 1, 1 });
+
+		update_corner_positions = true;
+
 		return true;
 	}
 
@@ -128,6 +139,9 @@ public:
 		if (m_current_axis == Axis_t::Y) return false;
 
 		this->scale({ 1, scale, 1 });
+
+		update_corner_positions = true;
+
 		return true;
 	}
 
@@ -137,6 +151,9 @@ public:
 		if (m_current_axis == Axis_t::Z) return false;
 
 		this->scale({ 1, 1, scale });
+
+		update_corner_positions = true;
+
 		return true;
 	}
 
@@ -147,18 +164,24 @@ public:
 	void scaleAndMove<Axis_t::X>(float scale)
 	{
 		this->scale({scale,1,1}, { 0.5f,0,0 });
+
+		update_corner_positions = true;
 	}
 
 	template<>
 	void scaleAndMove<Axis_t::Y>(float scale)
 	{
 		this->scale({ 1,scale,1 }, { 0,0.5f,0 });
+
+		update_corner_positions = true;
 	}
 
 	template<>
 	void scaleAndMove<Axis_t::Z>(float scale)
 	{
 		this->scale({ 1,1,scale }, { 0,0,0.5f });
+
+		update_corner_positions = true;
 	}
 
 	/// <summary>
@@ -222,6 +245,30 @@ public:
 		return NAN;
 	}
 
+	const std::array<glm::vec3, 4>& getCorners()
+	{
+		if (update_corner_positions)
+		{
+			corner_positions = std::array<glm::vec3, 4>
+			{
+				glm::vec3(m_vertices[0], m_vertices[1], m_vertices[2]) + m_position,
+				glm::vec3(m_vertices[9], m_vertices[10], m_vertices[11]) + m_position,
+				glm::vec3(m_vertices[18], m_vertices[19], m_vertices[20]) + m_position,
+				glm::vec3(m_vertices[36], m_vertices[37], m_vertices[38]) + m_position,
+			};
+		}
+
+		return corner_positions;
+	}
+
+	glm::vec3 getCenter()
+	{
+		return m_position + m_scale / 2.f;
+	}
+
 private:
 	Axis_t m_current_axis = Axis_t::EMPTY;
+
+	bool update_corner_positions = false;
+	std::array <glm::vec3, 4> corner_positions;
 };

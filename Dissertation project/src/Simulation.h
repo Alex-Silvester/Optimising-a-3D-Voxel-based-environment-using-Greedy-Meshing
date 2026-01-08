@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "Shader Types/CubeShader.h"
+#include "Shader Types/HUDShader.h"
 #include "shapes/Cube.h"
 #include "shapes/Rect.h"
 
@@ -104,14 +105,26 @@ private:
 
 	void drawFaces();
 
+	Rect *getFaceData();
+
+	bool lineIntersectsQuad(Rect *quad, const glm::vec3 &line_start_pos, const glm::vec3& line_end_pos, glm::vec3& intersection_point);
+
+	inline float scalarTriple(const glm::vec3 &u, const glm::vec3 &v, const glm::vec3 &w) const
+	{
+		return glm::dot(glm::cross(u, v), w);
+	}
+
+	Rect *getSelectedFace();
+
 private:
 
 	DrawWindow m_window;
 
-	static constexpr glm::vec<3, int> m_world_size = {100, 100, 100};
+	static constexpr glm::vec<3, int> m_world_size = {20, 20, 20};
 	std::vector<Cube> cubes;
 
 	CubeShader cube_shader;
+	HUDShader hud_shader;
 
 	Axis x_axis = Axis(Axis_t::X, m_world_size.x, m_world_size.y * m_world_size.z);
 	Axis y_axis = Axis(Axis_t::Y, m_world_size.y, m_world_size.z * m_world_size.x);
@@ -131,6 +144,14 @@ private:
 	float average_fps = 0;
 	double time_passed = 0;
 	double sample_timer = 0;
+
+#if FACE_CHECKING == true
+	glm::vec3 m_selected_position = {0,0,0};
+	glm::vec3 m_selected_scale = { 0,0,0 };
+	glm::vec3 m_selected_center = { 0,0,0 };
+#endif
+
+	Rect crosshair;
 
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
 	std::vector<Rect *> faces = {};
@@ -169,6 +190,13 @@ bool Simulation::init()
 	cube_shader.setLightPosition(m_world_size.x / 2.f, m_world_size.y, m_world_size.z / 2.f);
 	cube_shader.setAmbientLightStrength(0.5f);
 	cube_shader.setLightIntensity(1.f);
+	cube_shader.setWorldSize(m_world_size);
+
+	hud_shader.init();
+	crosshair.initialise(projection, hud_shader.shaderPtr());
+	crosshair.setColor({ 1,1,1 });
+	crosshair.setFacing(Axis_t::Z);
+	crosshair.scale({ 10.f / 1080.f, 10.f / 720.f, 1.f });
 
 	return true;
 }
@@ -290,7 +318,26 @@ void Simulation::update()
 	ImGui::Text("FPS: %.f", 1.f / m_fps);
 	ImGui::Text("Average FPS: %.f", average_fps);
 
+#if FACE_CHECKING == true
+	Rect *current_face = getSelectedFace();
+	if (ImGui::Button("Get Face Data")  && current_face != nullptr)
+	{
+		m_selected_position = current_face->getPosition();
+		m_selected_scale = current_face->getScale();
+		m_selected_center = current_face->getCenter();
+	}
+	ImGui::Text("Position: [%.1f, %.1f, %.1f]", m_selected_position.x, m_selected_position.y, m_selected_position.z);
+	ImGui::Text("Center: [%.1f, %.1f, %.1f]", m_selected_center.x, m_selected_center.y, m_selected_center.z);
+	ImGui::Text("Scale: [%.1f, %.1f, %.1f]", m_selected_scale.x, m_selected_scale.y, m_selected_scale.z);
+#endif
 	ImGui::End();
+#endif
+
+#if FACE_CHECKING == true
+	if (current_face != nullptr)
+	{
+		current_face->setColor({ 1.f,0.f,0.f });
+	}
 #endif
 }
 
@@ -325,6 +372,8 @@ void Simulation::render()
 
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 #endif
+
+	m_window.draw(crosshair);
 }
 
 void Simulation::worldCreation()
@@ -397,4 +446,154 @@ inline void Simulation::drawFaces()
 	m_window.draw(y_axis);
 	m_window.draw(z_axis);
 #endif
+}
+
+inline Rect *Simulation::getFaceData()
+{
+	float dist = 100.f;
+
+
+
+	return nullptr;
+}
+
+inline bool Simulation::lineIntersectsQuad(Rect *quad, const glm::vec3 &line_start_pos, const glm::vec3 &line_end_pos, glm::vec3& intersection_point)
+{
+	const glm::vec3 &q = line_start_pos;
+	const glm::vec3 &p = line_end_pos;
+
+	std::array<glm::vec3, 4> corners = quad->getCorners();
+	const glm::vec3 &a = corners[0];
+	const glm::vec3 &b = corners[1];
+	const glm::vec3 &c = corners[2];
+	const glm::vec3 &d = corners[3];
+
+
+	glm::vec3 pq = q - p;
+	glm::vec3 pa = a - p;
+	glm::vec3 pb = b - p;
+	glm::vec3 pc = c - p;
+
+	glm::vec3 m = glm::cross(pc, pq);
+	float v = glm::dot(pa, m);
+	if (v >= 0.0f)
+	{
+		float u = -glm::dot(pb, m);
+		if (u < 0.0f) return false;
+		float w = scalarTriple(pq,pb,pa);
+		if (w < 0.0f) return false;
+
+		float denom = 1.0f / (u + v + w);
+		u *= denom;
+		v *= denom;
+		w *= denom;
+		intersection_point = u * a + v * b + w * c;
+	}
+	else
+	{
+		glm::vec3 pd = d - p;
+
+		float u = glm::dot(pd, m);
+		if (u < 0.0f) return false;
+		float w = scalarTriple(pq, pa, pd);
+		if (w < 0.0f) return false;
+
+		v = -v;
+
+		float denom = 1.0f / (u + v + w);
+		u *= denom;
+		v *= denom;
+		w *= denom;
+		intersection_point = u * a + v * d + w * c;
+	}
+
+	return true;
+}
+
+inline Rect *Simulation::getSelectedFace()
+{
+	float line_dist = 20.f;
+	glm::vec3 camera_pos = m_window.getCamera().Position;
+	glm::vec3 line_end = camera_pos + m_window.getCamera().Front * line_dist;
+
+	Rect *current_face = nullptr;
+	glm::vec3 current_intersection_point = {INFINITE, INFINITE, INFINITE};
+	glm::vec3 checking_intersection_point;
+
+	for (Rect *face : x_axis.getFaces())
+	{
+		face->setColor({ 0.f,1.f,0.f });
+
+		if (lineIntersectsQuad(face, camera_pos, line_end, checking_intersection_point))
+		{
+			if (current_face == nullptr)
+			{
+				current_face = face;
+				current_intersection_point = checking_intersection_point;
+				continue;
+			}
+
+			//if the distance to the new face is further than the current, then check the next face
+			if (glm::distance(camera_pos, current_intersection_point) <
+					glm::distance(camera_pos, checking_intersection_point))
+			{
+				continue;
+			}
+
+			current_face = face;
+			current_intersection_point = checking_intersection_point;
+		}
+	}
+
+	for (Rect *face : y_axis.getFaces())
+	{
+		face->setColor({ 0.f,1.f,0.f });
+
+		if (lineIntersectsQuad(face, camera_pos, line_end, checking_intersection_point))
+		{
+			if (current_face == nullptr)
+			{
+				current_face = face;
+				current_intersection_point = checking_intersection_point;
+				continue;
+			}
+
+			//if the distance to the new face is further than the current, then check the next face
+			if ( glm::distance(camera_pos, current_intersection_point) <
+					glm::distance(camera_pos, checking_intersection_point))
+			{
+				continue;
+			}
+
+			current_face = face;
+			current_intersection_point = checking_intersection_point;
+		}
+	}
+
+	for (Rect *face : z_axis.getFaces())
+	{
+		face->setColor({ 0.f,1.f,0.f });
+
+		if (lineIntersectsQuad(face, camera_pos, line_end, checking_intersection_point))
+		{
+			if (current_face == nullptr)
+			{
+				current_face = face;
+				current_intersection_point = checking_intersection_point;
+				continue;
+			}
+
+			//if the distance to the new face is further than the current, then check the next face
+			if (glm::distance(camera_pos, current_intersection_point) <
+					glm::distance(camera_pos, checking_intersection_point))
+			{
+				continue;
+			}
+
+			current_face = face;
+			current_intersection_point = checking_intersection_point;
+		}
+	}
+
+	return current_face;
 }
