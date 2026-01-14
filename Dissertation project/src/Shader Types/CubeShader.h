@@ -56,6 +56,11 @@ public:
 		setFloat("ambientStrength", ambient);
 	}
 
+	void setWorldSize(const glm::vec3 &size)
+	{
+		setVec3("worldSize", size);
+	}
+
 private:
 
 };

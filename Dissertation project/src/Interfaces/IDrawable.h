@@ -8,6 +8,8 @@
 #include "../Shader Types/CubeShader.h"
 #include "../Window/DrawWindow.h"
 
+#include "../Helpers/Settings.h"
+
 class IDrawable
 {
 public:
@@ -21,7 +23,7 @@ public:
     m_shader->init(vertex_path, fragment_path);
 
     m_shader->use();
-    m_shader->setVec3("objectColor", 1.0f, 1.0f, 1.0f);
+    m_shader->setVec3("objectColor", 1.f,0.f,0.f);
     m_shader->setVec3("lightColor", 1.0f, 1.0f, 1.0f);
     m_shader->setVec3("lightPos", glm::vec3(0,0,0));
     m_shader->setInt("intensity", 1);
@@ -53,6 +55,11 @@ public:
     m_shader->setVec3("lightColor", 1.0f, 1.0f, 1.0f);
     m_shader->setVec3("lightPos", glm::vec3(0, 0, 0));
     m_shader->setInt("intensity", 1);
+  }
+
+  void setProjection(glm::mat4 &projection)
+  {
+    m_shader->setMat4("projection", projection);
   }
   
   void setVertices(const std::vector<float>& vertices)
@@ -171,6 +178,11 @@ public:
 
   const glm::vec3 &getScale() const { return m_scale; }
 
+  void setColor(const glm::vec3 &col)
+  {
+    m_color = col;
+  }
+
 private:
 
   friend class DrawWindow;
@@ -180,12 +192,14 @@ private:
     m_shader->use();
     m_shader->setMat4("view", view);
     m_shader->setVec3("position", m_position);
+    m_shader->setVec3("scale", m_scale);
+    m_shader->setVec3("objectColor", m_color);
 
     // render
     glBindVertexArray(VAO);
 
     //explicitly bind the VBO
-		//glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(float), &m_vertices[0], GL_STATIC_DRAW);
 
     // calculate the model matrix for each object and pass it to shader before drawing
@@ -193,19 +207,56 @@ private:
     model = glm::translate(model, glm::vec3(0.f));
     m_shader->setMat4("model", model);
 
+  #if OCCLUSION_CULL_QUERY == true
+    glGenQueries(1, &occ_query);
+
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDepthMask(GL_FALSE);
+
+    glBeginQuery(GL_ANY_SAMPLES_PASSED, occ_query);
+
     glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+
+    glEndQuery(GL_ANY_SAMPLES_PASSED);
+
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthMask(GL_TRUE);
+
+    glGetQueryObjectiv(occ_query, GL_QUERY_RESULT, &passed);
+    
+
+    if (prev_passed)
+    {
+      glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+      prev_passed = (passed != 0);
+    }
+    else
+    {
+      prev_passed = (passed != 0);
+      return;
+    }
+  #else
+    glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+  #endif
 	}
   
 protected:
 
   glm::vec3 m_position = { 0,0,0 };
   glm::vec3 m_scale = { 1.0f , 1.0f, 1.0f };
+	std::vector<float> m_vertices;
 
 private:
 
-	std::vector<float> m_vertices;
   Shader* m_shader = nullptr;
 
+  glm::vec3 m_color = { 0.f,1.f,0.f };
 
+#if OCCLUSION_CULL_QUERY == true
+  GLuint occ_query;
+  int passed = 0;
+#endif
+
+  bool prev_passed = true;
   int layer = 0;
 };

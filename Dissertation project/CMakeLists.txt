@@ -31,7 +31,6 @@ FetchContent_MakeAvailable(GLM)
 # Add source to this project's executable.
 add_executable (${PROJECT_NAME} "main.cpp"  
 "src/Simulation.h"
-"src/Simulation.cpp" 
 "src/Window/WindowBase"
 "src/Window/DrawWindow.h" 
 "src/camera.h" 
@@ -42,7 +41,29 @@ add_executable (${PROJECT_NAME} "main.cpp"
 "src/shapes/Cube.h"  
 "src/Axis.h" 
 "src/Timer.h"
-"src/Noise/PerlinNoise.h" "src/Shader Types/CubeShader.h")
+"src/Noise/PerlinNoise.h"
+"src/Shader Types/CubeShader.h"
+"src/Helpers/Settings.h" 
+"src/imgui-1.92.5/imconfig.h"
+"src/imgui-1.92.5/imgui.cpp" 
+"src/imgui-1.92.5/imgui.h"
+"src/imgui-1.92.5/imgui_demo.cpp"
+"src/imgui-1.92.5/imgui_draw.cpp" 
+"src/imgui-1.92.5/imgui_internal.h"
+"src/imgui-1.92.5/imgui_tables.cpp"
+"src/imgui-1.92.5/imgui_widgets.cpp" 
+"src/imgui-1.92.5/imstb_rectpack.h" 
+"src/imgui-1.92.5/imstb_textedit.h" 
+"src/imgui-1.92.5/imstb_truetype.h"
+"src/imgui-1.92.5/backends/imgui_impl_glfw.cpp"
+"src/imgui-1.92.5/backends/imgui_impl_glfw.h"
+"src/imgui-1.92.5/backends/imgui_impl_opengl3.cpp" 
+"src/imgui-1.92.5/backends/imgui_impl_opengl3.h"
+"src/imgui-1.92.5/backends/imgui_impl_opengl3_loader.h"
+"src/imgui-1.92.5/misc/cpp/imgui_stdlib.cpp"
+"src/imgui-1.92.5/misc/cpp/imgui_stdlib.h"
+"src/imgui-1.92.5/misc/fonts/binary_to_compressed_c.cpp"
+"src/imgui-1.92.5/misc/single_file/imgui_single_file.h" "src/Shader Types/HUDShader.h")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)

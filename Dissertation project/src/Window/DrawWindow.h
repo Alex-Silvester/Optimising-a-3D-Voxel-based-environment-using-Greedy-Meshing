@@ -4,7 +4,7 @@
 #include "../camera.h"
 #include "../Interfaces/IDrawable.h"
 
-#define CULL_FACES true
+#include "../Helpers/Settings.h"
 
 class DrawWindow : public WindowBase
 {
@@ -41,9 +41,9 @@ public:
     glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 9);
   }
 
-  bool initialise() override
+  bool initialise(float size_x = SCREEN_WIDTH, float size_y = SCREEN_HEIGHT, const char *name = "") override
   {
-    if (!WindowBase::initialise())
+    if (!WindowBase::initialise(size_x, size_y, name))
     {
       return false;
     }
@@ -52,7 +52,7 @@ public:
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
-#if CULL_FACES
+#if CULL_FACES == true
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CW);
 #endif
@@ -111,7 +111,10 @@ private:
 		m_lastX = xpos;
 		m_lastY = ypos;
 
-		camera.ProcessMouseMovement(xoffset, yoffset);
+    if(!m_paused)
+    {
+      camera.ProcessMouseMovement(xoffset, yoffset);
+    }
 	}
 
 	void processInput() override
@@ -142,6 +145,25 @@ private:
     {
       f5_pressed = false;
     }
+
+    //Screen pause
+    if (keyPressed(GLFW_KEY_ENTER) && !enter_pressed)
+    {
+      enter_pressed = true;
+      m_paused = !m_paused;
+      
+      glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+      if (m_paused)
+      {
+        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+      }
+    }
+    if (keyReleased(GLFW_KEY_ENTER))
+    {
+      enter_pressed = false;
+    }
+
+    if (m_paused) return;
 
     //forward/backward movement
     if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS)
@@ -183,6 +205,7 @@ private:
       camera.sprint_active = false;
     }
 
+#if TAB_CHANGES_CURSOR == true
     //cursor type
     if (glfwGetKey(m_window, GLFW_KEY_TAB) == GLFW_PRESS && !tab_pressed)
     {
@@ -200,17 +223,8 @@ private:
     {
       tab_pressed = false;
     }
+#endif
 
-    //Screen pause
-    if (keyPressed(GLFW_KEY_ENTER) && !enter_pressed)
-    {
-      enter_pressed = true;
-      m_paused = !m_paused;
-    }
-    if (keyReleased(GLFW_KEY_ENTER))
-    {
-      enter_pressed = false;
-    }
   }
 
   bool keyPressed(int key)
@@ -234,7 +248,7 @@ private:
   bool f5_pressed = false;
   bool enter_pressed = false;
 
-	Camera camera{ glm::vec3(0.f, 0.f, 0.f) , {0.f,1.f,0.f}, 90.f, 0.f };
+	Camera camera{ glm::vec3(-5.f, 0.f, -5.f) , {0.f,1.f,0.f}, 90.f, 0.f };
 
   unsigned int VAO = 0, VBO = 0;
 

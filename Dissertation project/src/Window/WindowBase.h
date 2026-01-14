@@ -4,8 +4,13 @@
 #include <glad.c>
 #include <GLFW/glfw3.h>
 
+#include "glm/glm.hpp"
+
 #include <iostream>
 #include <vector>
+#include <functional>
+
+#include "../Helpers/Settings.h"
 
 constexpr auto SCREEN_WIDTH = 720;
 constexpr auto SCREEN_HEIGHT = 540;
@@ -18,7 +23,7 @@ public:
 
 	WindowBase(float size_x, float size_y, const char* name = "")
 	{
-		if (!initialise())
+		if (!initialise(size_x, size_y, name))
 		{
 			std::cerr << "Failed to initialise WindowBase";
 		}
@@ -61,9 +66,11 @@ public:
 		processInput();
 	}
 
+	GLFWwindow *getWindow() { return m_window; }
+
 protected:
 
-	virtual bool initialise()
+	virtual bool initialise(float size_x = SCREEN_WIDTH, float size_y = SCREEN_HEIGHT, const char *name = "")
 	{
 		// glfw: initialize and configure
 		// ------------------------------
@@ -76,7 +83,7 @@ protected:
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-		m_window = createWindow();
+		m_window = createWindow(size_x, size_y, name);
 		glfwSetWindowUserPointer(m_window, reinterpret_cast<void*>(this));
 
 
@@ -93,19 +100,20 @@ protected:
 
 private:
 
-	GLFWwindow* createWindow()
+	GLFWwindow* createWindow(float size_x = SCREEN_WIDTH, float size_y = SCREEN_HEIGHT, const char *name = "")
 	{
-		GLFWwindow* window = makeWindow();
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		GLFWwindow* window = makeWindow(size_x, size_y, name);
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		return window;
 	}
 
-	GLFWwindow* makeWindow(const char* name = "")
+	GLFWwindow* makeWindow(float size_x = SCREEN_WIDTH, float size_y = SCREEN_HEIGHT, const char* name = "")
 	{
 		glfwWindowHint(GLFW_SAMPLES, 4);
+		glfwWindowHint(GLFW_DECORATED, DECORATE_WINDOW);
 		// glfw window creation
 		// --------------------
-		GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, name, NULL, NULL);
+		GLFWwindow* window = glfwCreateWindow(size_x, size_y, name, NULL, NULL);
 		if (window == NULL)
 		{
 			std::cout << ("Failed to create GLFW window") << std::endl;
@@ -157,7 +165,5 @@ protected:
 
 private:
 
-
 	float m_last_frame = 0.f;
-
 };
