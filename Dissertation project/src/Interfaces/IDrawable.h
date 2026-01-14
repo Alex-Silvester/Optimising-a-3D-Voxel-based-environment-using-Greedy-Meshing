@@ -56,6 +56,11 @@ public:
     m_shader->setVec3("lightPos", glm::vec3(0, 0, 0));
     m_shader->setInt("intensity", 1);
   }
+
+  void setProjection(glm::mat4 &projection)
+  {
+    m_shader->setMat4("projection", projection);
+  }
   
   void setVertices(const std::vector<float>& vertices)
   {

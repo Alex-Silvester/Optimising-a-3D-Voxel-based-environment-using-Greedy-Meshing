@@ -4,8 +4,13 @@
 #include <glad.c>
 #include <GLFW/glfw3.h>
 
+#include "glm/glm.hpp"
+
 #include <iostream>
 #include <vector>
+#include <functional>
+
+#include "../Helpers/Settings.h"
 
 constexpr auto SCREEN_WIDTH = 720;
 constexpr auto SCREEN_HEIGHT = 540;
@@ -98,13 +103,14 @@ private:
 	GLFWwindow* createWindow(float size_x = SCREEN_WIDTH, float size_y = SCREEN_HEIGHT, const char *name = "")
 	{
 		GLFWwindow* window = makeWindow(size_x, size_y, name);
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		return window;
 	}
 
 	GLFWwindow* makeWindow(float size_x = SCREEN_WIDTH, float size_y = SCREEN_HEIGHT, const char* name = "")
 	{
 		glfwWindowHint(GLFW_SAMPLES, 4);
+		glfwWindowHint(GLFW_DECORATED, DECORATE_WINDOW);
 		// glfw window creation
 		// --------------------
 		GLFWwindow* window = glfwCreateWindow(size_x, size_y, name, NULL, NULL);
@@ -159,7 +165,5 @@ protected:
 
 private:
 
-
 	float m_last_frame = 0.f;
-
 };

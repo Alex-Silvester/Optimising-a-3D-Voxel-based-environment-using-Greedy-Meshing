@@ -38,11 +38,7 @@ public:
 
 	Simulation()
 	{
-		projection = glm::perspective(
-			glm::radians(m_window.getCamera().Zoom),
-			(float)SCREEN_WIDTH / (float)SCREEN_HEIGHT,
-			0.1f,
-			100.0f);
+
 	}
 
 	bool init();
@@ -163,6 +159,18 @@ bool Simulation::init()
 	//initialise the window
 	m_window.initialise(1080, 720, "window");
 
+	int size_x;
+	int size_y;
+
+	glfwGetWindowSize(m_window.getWindow(), &size_x, &size_y);
+
+	projection = glm::perspective(
+		glm::radians(m_window.getCamera().Zoom),
+		(float)size_x / (float)size_y,
+		0.1f,
+		100.0f);
+
+
 	worldCreation();
 
 	axesSplitting();
@@ -197,6 +205,8 @@ bool Simulation::init()
 	crosshair.setColor({ 1,1,1 });
 	crosshair.setFacing(Axis_t::Z);
 	crosshair.scale({ 10.f / 1080.f, 10.f / 720.f, 1.f });
+
+	glfwSetInputMode(m_window.getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	return true;
 }
@@ -272,6 +282,7 @@ void Simulation::run()
 
 void Simulation::update()
 {
+
 #if OCCLUSION_CULL_QUERY == true
 	std::sort(faces.begin(), faces.end(), [this](Rect *face1, Rect *face2)
 	{
@@ -310,10 +321,10 @@ void Simulation::update()
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 
-	ImGui::Begin("Stats");                          // Create a window called "Hello, world!" and append into it.
+	ImGui::Begin("Stats");
 
-	ImGui::Text("Creation time: %.3f", m_world_creation_time); // Display some text (you can use a format strings too)
-	ImGui::Text("Axes split time: %.3f", m_axes_split_time);
+	ImGui::Text("Creation time: %.3f", m_world_creation_time);
+	ImGui::Text("Axis optimisation time: %.3f", m_axes_split_time);
 
 	ImGui::Text("FPS: %.f", 1.f / m_fps);
 	ImGui::Text("Average FPS: %.f", average_fps);

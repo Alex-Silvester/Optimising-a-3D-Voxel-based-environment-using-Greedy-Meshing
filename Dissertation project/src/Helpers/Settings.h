@@ -55,7 +55,18 @@
 //Cull that backs of faces
 #define CULL_FACES true
 
+//defines whether using the tab key activates/deactivates the cursor visibility
+#define TAB_CHANGES_CURSOR false
+
 /*----------DrawWindow----------*/
+
+/*----------WindowBase----------*/
+
+//whether the window whould have the bar on the top or not
+#define DECORATE_WINDOW true
+
+/*----------WindowBase----------*/
+
 
 
 #endif // !SETTINGS
