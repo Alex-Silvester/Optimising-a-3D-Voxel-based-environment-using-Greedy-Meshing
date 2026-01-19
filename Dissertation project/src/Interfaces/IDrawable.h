@@ -23,13 +23,6 @@ public:
     m_shader->init(vertex_path, fragment_path);
 
     m_shader->use();
-    m_shader->setVec3("objectColor", 1.f,0.f,0.f);
-    m_shader->setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-    m_shader->setVec3("lightPos", glm::vec3(0,0,0));
-    m_shader->setInt("intensity", 1);
-
-    // pass projection matrix to shader (note that in this case it could change every frame)
-    m_shader->setMat4("projection", projection);
   }
 
   void setShader(Shader* shader, glm::mat4& projection)
@@ -37,13 +30,6 @@ public:
     m_shader = shader;
 
     m_shader->use();
-    m_shader->setVec3("objectColor", 1.0f, 1.0f, 1.0f);
-    m_shader->setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-    m_shader->setVec3("lightPos", glm::vec3(0, 0, 0));
-    m_shader->setInt("intensity", 1);
-
-    // pass projection matrix to shader (note that in this case it could change every frame)
-    m_shader->setMat4("projection", projection);
   }
 
   void setShader(Shader* shader)
@@ -51,10 +37,6 @@ public:
     m_shader = (Shader*)(shader);
 
     m_shader->use();
-    m_shader->setVec3("objectColor", 1.0f, 1.0f, 1.0f);
-    m_shader->setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-    m_shader->setVec3("lightPos", glm::vec3(0, 0, 0));
-    m_shader->setInt("intensity", 1);
   }
 
   void setProjection(glm::mat4 &projection)

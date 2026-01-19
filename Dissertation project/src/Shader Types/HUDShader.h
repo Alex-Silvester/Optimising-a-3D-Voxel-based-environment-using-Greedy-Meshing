@@ -5,6 +5,14 @@
 class HUDShader : public Shader
 {
 public:
+
+	HUDShader()
+	{
+		Shader::init(
+			"Data/shaders/vertex/HUD_shader.vert",
+			"Data/shaders/fragment/HUD_shader.frag");
+	}
+
 	void init()
 	{
 		Shader::init(

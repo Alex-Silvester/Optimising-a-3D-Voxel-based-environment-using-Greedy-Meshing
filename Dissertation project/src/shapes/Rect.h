@@ -73,8 +73,7 @@ public:
 		//1.0 parts wide
 		setVertices(default_square, default_sqaure_vals);
 
-		setShader(shader,
-			projection);
+		setShader(shader, projection);
 
 		update_corner_positions = true;
 	}

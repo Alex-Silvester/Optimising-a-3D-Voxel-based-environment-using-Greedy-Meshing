@@ -63,10 +63,11 @@
 /*----------WindowBase----------*/
 
 //whether the window whould have the bar on the top or not
-#define DECORATE_WINDOW true
+#define DECORATE_WINDOW false
 
 /*----------WindowBase----------*/
 
 
 
 #endif // !SETTINGS
+

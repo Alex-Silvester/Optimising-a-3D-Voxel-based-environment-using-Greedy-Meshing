@@ -10,7 +10,41 @@ class DrawWindow : public WindowBase
 {
 public:
 
-  DrawWindow() = default;
+  DrawWindow(float size_x = SCREEN_WIDTH, float size_y = SCREEN_HEIGHT, const char *name = "")
+  {
+    //assert((WindowBase::initialise(size_x, size_y, name)==true));
+    WindowBase::initialise(size_x, size_y, name);
+
+    // configure global opengl state
+    // -----------------------------
+    glEnable(GL_DEPTH_TEST);
+
+  #if CULL_FACES == true
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CW);
+  #endif
+
+    glEnable(GL_MULTISAMPLE);
+
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    //position(3 floats), colour(3 floats), normal(3 floats)
+
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+    // texture coord attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    // normal attribute
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+  }
 
   void draw(IDrawable& drawable)
   {
