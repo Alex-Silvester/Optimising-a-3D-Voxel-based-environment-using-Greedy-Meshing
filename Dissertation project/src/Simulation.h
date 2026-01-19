@@ -28,6 +28,7 @@
 #include "Shader Types/HUDShader.h"
 #include "shapes/Cube.h"
 #include "shapes/Rect.h"
+#include "shapes/WireFrame.h"
 
 #include "imgui-1.92.5/imgui.h"
 #include "imgui-1.92.5/backends/imgui_impl_glfw.h"
@@ -141,6 +142,8 @@ private:
 
 	Rect crosshair;
 
+	WireFrame<Rect> test_frame;
+
 #if FACE_CHECKING == true
 	glm::vec3 m_selected_position = {0,0,0};
 	glm::vec3 m_selected_scale = { 0,0,0 };
@@ -176,6 +179,11 @@ bool Simulation::init()
 	worldCreation();
 
 	axesSplitting();
+
+	test_frame.getShape().initialise(projection, cube_shader.shaderPtr());
+
+	test_frame.getShape().setFacing(Axis_t::Z, true);
+	test_frame.getShape().setPosition({ 0,-1,0 });
 
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
 	faces.resize(x_axis.getFaces().size() + y_axis.getFaces().size() + z_axis.getFaces().size());
@@ -377,6 +385,7 @@ void Simulation::render()
 #endif
 
 	m_window.draw(crosshair);
+	m_window.draw(test_frame);
 }
 
 void Simulation::worldCreation()
