@@ -142,7 +142,7 @@ private:
 
 	Rect crosshair;
 
-	WireFrame<Rect> test_frame;
+	WireFrame<Cube> test_frame;
 
 #if FACE_CHECKING == true
 	glm::vec3 m_selected_position = {0,0,0};
@@ -180,10 +180,8 @@ bool Simulation::init()
 
 	axesSplitting();
 
-	test_frame.getShape().initialise(projection, cube_shader.shaderPtr());
-
-	test_frame.getShape().setFacing(Axis_t::Z, true);
-	test_frame.getShape().setPosition({ 0,-1,0 });
+	test_frame->initialise(projection, cube_shader.shaderPtr());
+	test_frame->setPosition({ 0,-1,0 });
 
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
 	faces.resize(x_axis.getFaces().size() + y_axis.getFaces().size() + z_axis.getFaces().size());
