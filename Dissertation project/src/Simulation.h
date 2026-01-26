@@ -26,9 +26,11 @@
 
 #include "Shader Types/CubeShader.h"
 #include "Shader Types/HUDShader.h"
+#include "Shader Types/BillboardShader.h"
 #include "shapes/Cube.h"
 #include "shapes/Rect.h"
 #include "shapes/WireFrame.h"
+#include "shapes/Particle.h"
 
 #include "imgui-1.92.5/imgui.h"
 #include "imgui-1.92.5/backends/imgui_impl_glfw.h"
@@ -120,6 +122,7 @@ private:
 
 	CubeShader cube_shader = CubeShader();
 	HUDShader hud_shader = HUDShader();
+	BillboardShader billboard_shader = BillboardShader();
 
 	Axis x_axis = Axis(Axis_t::X, m_world_size.x, m_world_size.y * m_world_size.z);
 	Axis y_axis = Axis(Axis_t::Y, m_world_size.y, m_world_size.z * m_world_size.x);
@@ -144,6 +147,8 @@ private:
 
 	WireFrame<Cube> test_frame;
 
+	Particle<Rect> test_particle;
+
 #if FACE_CHECKING == true
 	glm::vec3 m_selected_position = {0,0,0};
 	glm::vec3 m_selected_scale = { 0,0,0 };
@@ -160,7 +165,6 @@ bool Simulation::init()
 {
 	projection = hf::getProjection(m_window.getWindow(), m_window.getCamera());
 
-
 	cube_shader.use();
 
 	cube_shader.setLightPosition(m_world_size.x / 2.f, m_world_size.y, m_world_size.z / 2.f)
@@ -170,6 +174,12 @@ bool Simulation::init()
 		.setWorldSize(m_world_size)
 		.setObjectColor(0.f, 1.f, 0.f)
 		.setProjection(projection);
+
+	hud_shader.use();
+	hud_shader.setProjection(projection);
+
+	billboard_shader.use();
+	billboard_shader.setProjection(projection);
 
 	crosshair.initialise(projection, hud_shader.shaderPtr());
 	crosshair.setColor({ 1,1,1 });
@@ -181,7 +191,11 @@ bool Simulation::init()
 	axesSplitting();
 
 	test_frame->initialise(projection, cube_shader.shaderPtr());
-	test_frame->setPosition({ 0,-1,0 });
+	test_frame->setPosition({ 0,-8,2 });
+
+	test_particle->initialise(projection, billboard_shader.shaderPtr());
+	test_particle->setPosition({ 0.5,-8.5,2 });
+	test_particle.scale({ 2,2,2 });
 
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
 	faces.resize(x_axis.getFaces().size() + y_axis.getFaces().size() + z_axis.getFaces().size());
@@ -383,6 +397,7 @@ void Simulation::render()
 #endif
 
 	m_window.draw(crosshair);
+	m_window.draw(test_particle);
 	m_window.draw(test_frame);
 }
 

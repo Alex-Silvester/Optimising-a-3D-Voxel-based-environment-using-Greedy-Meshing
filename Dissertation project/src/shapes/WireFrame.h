@@ -1,22 +1,14 @@
 #pragma once
 
-#include <concepts>
-
 #include "../Interfaces/IDrawable.h"
-
-template<class T>
-concept Drawable = requires(T t)
-{
-	dynamic_cast<IDrawable *>(&t);
-};
 
 template<Drawable T>
 class WireFrame : public IDrawable
 {
 public:
 
-	void initialise(glm::mat4 &projection) override {}
-	void initialise(glm::mat4 &projection, Shader *shader) override {}
+	void initialise(glm::mat4 &projection) override { m_shape.initialise(projection); }
+	void initialise(glm::mat4 &projection, Shader *shader) override { m_shape.initialise(projection, shader); }
 
 	T &getShape()
 	{
@@ -34,7 +26,7 @@ private:
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glDisable(GL_CULL_FACE);
-
+		
 		window.draw(m_shape);
 
 		glEnable(GL_CULL_FACE);
