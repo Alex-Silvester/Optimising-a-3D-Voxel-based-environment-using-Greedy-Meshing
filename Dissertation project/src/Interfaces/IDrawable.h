@@ -174,6 +174,10 @@ public:
     m_color = col;
   }
 
+  bool freecam_active = false;
+  bool passed = false;
+  int face_passed = true;
+
 private:
 
   friend class DrawWindow;
@@ -197,6 +201,7 @@ private:
     glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
     model = glm::translate(model, glm::vec3(0.f));
     m_shader->setMat4("model", model);
+    
 
   #if OCCLUSION_CULL_QUERY == true
     glGenQueries(1, &occ_query);
@@ -227,7 +232,38 @@ private:
       return;
     }
   #else
-    glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+
+    if (freecam_active && !passed)
+    {
+      passed = true;
+
+      GLuint query;
+
+      glGenQueries(1, &query);
+
+      glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+      glDepthMask(GL_FALSE);
+
+      glBeginQuery(GL_ANY_SAMPLES_PASSED, query);
+
+      glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+
+      glEndQuery(GL_ANY_SAMPLES_PASSED);
+
+      glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+      glDepthMask(GL_TRUE);
+
+      glGetQueryObjectiv(query, GL_QUERY_RESULT, &face_passed);
+    }
+    else if(!freecam_active)
+    {
+      face_passed = 1;
+    }
+
+    if(face_passed != 0)
+    {
+      glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+    }
   #endif
 	}
   
