@@ -2,22 +2,22 @@
 
 #include "shader.h"
 
-class HUDShader : public Shader
+class BillboardShader : public Shader
 {
 public:
 
-	HUDShader()
+	BillboardShader()
 	{
 		Shader::init(
-			"Data/shaders/vertex/HUD_shader.vert",
-			"Data/shaders/fragment/HUD_shader.frag");
+			"Data/shaders/vertex/Billboard_shader.vert",
+			"Data/shaders/fragment/Billboard_shader.frag");
 	}
 
 	void init()
 	{
 		Shader::init(
-			"Data/shaders/vertex/HUD_shader.vert",
-			"Data/shaders/fragment/HUD_shader.frag");
+			"Data/shaders/vertex/Billboard_shader.vert",
+			"Data/shaders/fragment/Billboard_shader.frag");
 	}
 
 	void setProjection(glm::mat4 &projection)

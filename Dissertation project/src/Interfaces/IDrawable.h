@@ -9,6 +9,15 @@
 #include "../Window/DrawWindow.h"
 
 #include "../Helpers/Settings.h"
+#include "../Helpers/Definitions.h"
+
+class IDrawable;
+
+template<class T>
+concept Drawable = requires(T t)
+{
+  dynamic_cast<IDrawable *>(&t);
+};
 
 class IDrawable
 {

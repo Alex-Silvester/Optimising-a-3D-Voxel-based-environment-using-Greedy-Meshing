@@ -125,6 +125,8 @@ public:
     return m_paused;
   }
 
+  bool isWireFrame() const { return m_wire_frame; }
+
 private:
 
 	void mouseEvent(double xposIn, double yposIn)override
@@ -169,10 +171,12 @@ private:
       if (polygonMode == GL_FILL)
       {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        m_wire_frame = true;
       }
       else if (polygonMode == GL_LINE)
       {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        m_wire_frame = false;
       }
     }
     if (glfwGetKey(m_window, GLFW_KEY_F5) == GLFW_RELEASE && f5_pressed)
@@ -287,4 +291,6 @@ private:
   unsigned int VAO = 0, VBO = 0;
 
   bool m_paused = false;
+
+  bool m_wire_frame = false;
 };
