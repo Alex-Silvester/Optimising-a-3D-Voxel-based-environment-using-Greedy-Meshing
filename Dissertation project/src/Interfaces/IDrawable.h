@@ -223,7 +223,7 @@ private:
 
     if (prev_passed)
     {
-      glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+      drawVertices()
       prev_passed = (passed != 0);
     }
     else
@@ -233,6 +233,14 @@ private:
     }
   #else
 
+    drawVertices();
+
+  #endif
+	}
+
+  void drawVertices()
+  {
+  #if FREECAM_ACTIVE == true
     if (freecam_active && !passed)
     {
       passed = true;
@@ -255,17 +263,19 @@ private:
 
       glGetQueryObjectiv(query, GL_QUERY_RESULT, &face_passed);
     }
-    else if(!freecam_active)
+    else if (!freecam_active)
     {
       face_passed = 1;
     }
 
-    if(face_passed != 0)
+    if (face_passed != 0)
     {
       glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
     }
+  #else
+    glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
   #endif
-	}
+  }
   
 protected:
 

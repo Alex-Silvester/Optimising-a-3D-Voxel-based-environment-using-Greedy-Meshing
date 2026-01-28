@@ -58,6 +58,9 @@
 //defines whether using the tab key activates/deactivates the cursor visibility
 #define TAB_CHANGES_CURSOR false
 
+//whether there is the ability to use the freecam
+#define FREECAM_ACTIVE true
+
 /*----------DrawWindow----------*/
 
 /*----------WindowBase----------*/
