@@ -255,6 +255,7 @@ private:
       current_camera->sprint_active = false;
     }
 
+#if FREECAM_ACTIVE == true
     //toggle free-cam
     if (glfwGetKey(m_window, GLFW_KEY_F) == GLFW_PRESS && !f_pressed)
     {
@@ -275,6 +276,7 @@ private:
     {
       f_pressed = false;
     }
+#endif
 
 #if TAB_CHANGES_CURSOR == true
     //cursor type

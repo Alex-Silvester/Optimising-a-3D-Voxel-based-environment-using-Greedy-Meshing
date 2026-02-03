@@ -7,6 +7,23 @@ class Particle : public IDrawable
 {
 public:
 
+	Particle()
+	{
+		m_shape.setAlwaysRendered(true);
+	}
+
+	Particle(glm::mat4 &projection)
+	{
+		m_shape.setAlwaysRendered(true);
+		m_shape.initialise(projection);
+	}
+
+	Particle(glm::mat4 &projection, Shader *shader)
+	{
+		m_shape.setAlwaysRendered(true);
+		m_shape.initialise(projection, shader);
+	}
+
 	void initialise(glm::mat4 &projection) override 
 	{
 		m_shape.initialise(projection); 

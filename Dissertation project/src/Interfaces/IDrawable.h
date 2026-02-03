@@ -174,6 +174,11 @@ public:
     m_color = col;
   }
 
+  void setAlwaysRendered(bool _always_rendered)
+  {
+    always_rendered = _always_rendered;
+  }
+
   bool freecam_active = false;
   bool passed = false;
   int face_passed = true;
@@ -241,6 +246,13 @@ private:
   void drawVertices()
   {
   #if FREECAM_ACTIVE == true
+
+    if (always_rendered)
+    {
+      glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+      return;
+    }
+
     if (freecam_active && !passed)
     {
       passed = true;
@@ -266,6 +278,7 @@ private:
     else if (!freecam_active)
     {
       face_passed = 1;
+      passed = false;
     }
 
     if (face_passed != 0)
@@ -283,6 +296,8 @@ protected:
   glm::vec3 m_scale = { 1.0f , 1.0f, 1.0f };
 	std::vector<float> m_vertices;
 
+  bool always_rendered = false;
+
 private:
 
   Shader* m_shader = nullptr;
@@ -296,4 +311,5 @@ private:
 
   bool prev_passed = true;
   int layer = 0;
+
 };

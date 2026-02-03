@@ -42,6 +42,13 @@ public:
 
 	Simulation() = default;
 
+	~Simulation()
+	{
+#if FREECAM_ACTIVE == true
+		delete freecam_particle;
+#endif
+	}
+
 	bool init();
 	void run();
 
@@ -147,7 +154,9 @@ private:
 
 	WireFrame<Cube> test_frame;
 
-	Particle<Rect> test_particle;
+#if FREECAM_ACTIVE == true
+	Particle<Rect>* freecam_particle = nullptr;
+#endif
 
 #if FACE_CHECKING == true
 	glm::vec3 m_selected_position = {0,0,0};
@@ -192,10 +201,6 @@ bool Simulation::init()
 
 	test_frame->initialise(projection, cube_shader.shaderPtr());
 	test_frame->setPosition({ 0,-8,2 });
-
-	test_particle->initialise(projection, billboard_shader.shaderPtr());
-	test_particle->setPosition({ 0.5,-8.5,2 });
-	test_particle.scale({ 2,2,2 });
 
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
 	faces.resize(x_axis.getFaces().size() + y_axis.getFaces().size() + z_axis.getFaces().size());
@@ -295,6 +300,22 @@ void Simulation::run()
 void Simulation::update()
 {
 
+#if FREECAM_ACTIVE == true
+
+	const glm::vec3 position = m_window.getCamera().Position;
+	if (m_window.freeCamActive() && freecam_particle == nullptr)
+	{
+		freecam_particle = new Particle<Rect>(projection, billboard_shader.shaderPtr());
+		(*freecam_particle)->setPosition(position);
+	}
+	else if(!m_window.freeCamActive() && freecam_particle != nullptr)
+	{
+		delete freecam_particle;
+		freecam_particle = nullptr;
+	}
+
+#endif
+
 #if OCCLUSION_CULL_QUERY == true
 	std::sort(faces.begin(), faces.end(), [this](Rect *face1, Rect *face2)
 	{
@@ -337,6 +358,8 @@ void Simulation::update()
 
 	ImGui::Text("Creation time: %.3f", m_world_creation_time);
 	ImGui::Text("Axis optimisation time: %.3f", m_axes_split_time);
+
+	ImGui::Text("Camera Position: [%.f %.f %.f]", position.x, position.y, position.z);
 
 	ImGui::Text("FPS: %.f", 1.f / m_fps);
 	ImGui::Text("Average FPS: %.f", average_fps);
@@ -397,8 +420,12 @@ void Simulation::render()
 #endif
 
 	m_window.draw(crosshair);
-	m_window.draw(test_particle);
 	m_window.draw(test_frame);
+
+	if(freecam_particle != nullptr)
+	{
+		m_window.draw(*freecam_particle);
+	}
 }
 
 void Simulation::worldCreation()
