@@ -174,6 +174,15 @@ public:
     m_color = col;
   }
 
+  void setAlwaysRendered(bool _always_rendered)
+  {
+    always_rendered = _always_rendered;
+  }
+
+  bool freecam_active = false;
+  bool passed = false;
+  int face_passed = true;
+
 private:
 
   friend class DrawWindow;
@@ -197,6 +206,7 @@ private:
     glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
     model = glm::translate(model, glm::vec3(0.f));
     m_shader->setMat4("model", model);
+    
 
   #if OCCLUSION_CULL_QUERY == true
     glGenQueries(1, &occ_query);
@@ -218,7 +228,7 @@ private:
 
     if (prev_passed)
     {
-      glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+      drawVertices()
       prev_passed = (passed != 0);
     }
     else
@@ -227,15 +237,66 @@ private:
       return;
     }
   #else
-    glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+
+    drawVertices();
+
   #endif
 	}
+
+  void drawVertices()
+  {
+  #if FREECAM_ACTIVE == true
+
+    if (always_rendered)
+    {
+      glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+      return;
+    }
+
+    if (freecam_active && !passed)
+    {
+      passed = true;
+
+      GLuint query;
+
+      glGenQueries(1, &query);
+
+      glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+      glDepthMask(GL_FALSE);
+
+      glBeginQuery(GL_ANY_SAMPLES_PASSED, query);
+
+      glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+
+      glEndQuery(GL_ANY_SAMPLES_PASSED);
+
+      glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+      glDepthMask(GL_TRUE);
+
+      glGetQueryObjectiv(query, GL_QUERY_RESULT, &face_passed);
+    }
+    else if (!freecam_active)
+    {
+      face_passed = 1;
+      passed = false;
+    }
+
+    if (face_passed != 0)
+    {
+      glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+    }
+  #else
+    glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+  #endif
+  }
   
 protected:
 
   glm::vec3 m_position = { 0,0,0 };
   glm::vec3 m_scale = { 1.0f , 1.0f, 1.0f };
 	std::vector<float> m_vertices;
+
+  bool always_rendered = false;
 
 private:
 
@@ -250,4 +311,5 @@ private:
 
   bool prev_passed = true;
   int layer = 0;
+
 };
