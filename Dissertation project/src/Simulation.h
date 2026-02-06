@@ -27,10 +27,13 @@
 #include "Shader Types/CubeShader.h"
 #include "Shader Types/HUDShader.h"
 #include "Shader Types/BillboardShader.h"
+#include "Shader Types/PlaneShader.h"
+
 #include "shapes/Cube.h"
 #include "shapes/Rect.h"
 #include "shapes/WireFrame.h"
 #include "shapes/Particle.h"
+#include "shapes/Frustum.h"
 
 #include "imgui-1.92.5/imgui.h"
 #include "imgui-1.92.5/backends/imgui_impl_glfw.h"
@@ -130,6 +133,7 @@ private:
 	CubeShader cube_shader = CubeShader();
 	HUDShader hud_shader = HUDShader();
 	BillboardShader billboard_shader = BillboardShader();
+	PlaneShader plane_shader = PlaneShader();
 
 	Axis x_axis = Axis(Axis_t::X, m_world_size.x, m_world_size.y * m_world_size.z);
 	Axis y_axis = Axis(Axis_t::Y, m_world_size.y, m_world_size.z * m_world_size.x);
@@ -154,6 +158,8 @@ private:
 
 	WireFrame<Cube> test_frame;
 
+	Frustum test_frustum;
+
 #if FREECAM_ACTIVE == true
 	Particle<Rect>* freecam_particle = nullptr;
 #endif
@@ -174,6 +180,7 @@ bool Simulation::init()
 {
 	projection = hf::getProjection(m_window.getWindow(), m_window.getCamera());
 
+	//shader setup
 	cube_shader.use();
 
 	cube_shader.setLightPosition(m_world_size.x / 2.f, m_world_size.y, m_world_size.z / 2.f)
@@ -190,6 +197,10 @@ bool Simulation::init()
 	billboard_shader.use();
 	billboard_shader.setProjection(projection);
 
+	plane_shader.use();
+	plane_shader.setProjection(projection);
+
+	//world setup
 	crosshair.initialise(projection, hud_shader.shaderPtr());
 	crosshair.setColor({ 1,1,1 });
 	crosshair.setFacing(Axis_t::Z);
@@ -201,6 +212,9 @@ bool Simulation::init()
 
 	test_frame->initialise(projection, cube_shader.shaderPtr());
 	test_frame->setPosition({ 0,-8,2 });
+
+	test_frustum = Frustum(m_window.getCamera(), 1920.f/1080.f, 90.f, 0.1f, 100.f);
+	test_frustum.initialise(projection, plane_shader.shaderPtr());
 
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
 	faces.resize(x_axis.getFaces().size() + y_axis.getFaces().size() + z_axis.getFaces().size());
@@ -426,6 +440,9 @@ void Simulation::render()
 	{
 		m_window.draw(*freecam_particle);
 	}
+
+	test_frustum.updateFaces();
+	m_window.draw(test_frustum);
 }
 
 void Simulation::worldCreation()
