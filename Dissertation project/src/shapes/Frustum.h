@@ -33,6 +33,7 @@ public:
   Frustum(const Camera &cam, float aspect, float fovY, float zNear, float zFar) : 
     m_camera_ptr (&cam  ),
     m_aspect     (aspect),
+    m_inv_aspect (1.f/aspect),
     m_fovY       (fovY  ),
     m_zNear      (zNear ),
     m_zFar       (zFar  )
@@ -72,41 +73,70 @@ private:
 
   void updateVertices(float half_vertical_size, float half_horizontal_size, const glm::vec3 &far_vec)
   {
-    const glm::vec3 near_top_left     = m_near_face.m_position +  m_camera_ptr->Right +  m_camera_ptr->Up;
-    const glm::vec3 near_top_right    = m_near_face.m_position + -m_camera_ptr->Right +  m_camera_ptr->Up;
-    const glm::vec3 near_bottom_right = m_near_face.m_position + -m_camera_ptr->Right + -m_camera_ptr->Up;
-    const glm::vec3 near_bottom_left  = m_near_face.m_position +  m_camera_ptr->Right + -m_camera_ptr->Up;
+    const glm::vec3 near_top_left     = m_near_face.m_position +  m_camera_ptr->Right +  m_camera_ptr->Up * m_inv_aspect;
+    const glm::vec3 near_top_right    = m_near_face.m_position + -m_camera_ptr->Right +  m_camera_ptr->Up * m_inv_aspect;
+    const glm::vec3 near_bottom_right = m_near_face.m_position + -m_camera_ptr->Right + -m_camera_ptr->Up * m_inv_aspect;
+    const glm::vec3 near_bottom_left  = m_near_face.m_position +  m_camera_ptr->Right + -m_camera_ptr->Up * m_inv_aspect;
 
-    //const glm::vec3 far_top_left     = cam_pos + glm::vec3{-half_horizontal_size,  half_vertical_size,m_zFar}*cam_dir;
-    //const glm::vec3 far_top_right    = cam_pos + glm::vec3{ half_horizontal_size,  half_vertical_size,m_zFar}*cam_dir;
-    //const glm::vec3 far_bottom_right = cam_pos + glm::vec3{ half_horizontal_size, -half_vertical_size,m_zFar}*cam_dir;
-    //const glm::vec3 far_bottom_left  = cam_pos + glm::vec3{-half_horizontal_size, -half_vertical_size,m_zFar}*cam_dir;
+    const glm::vec3 far_top_left     = m_far_face.m_position +  m_camera_ptr->Right * half_horizontal_size +  m_camera_ptr->Up * half_vertical_size;
+    const glm::vec3 far_top_right    = m_far_face.m_position + -m_camera_ptr->Right * half_horizontal_size +  m_camera_ptr->Up * half_vertical_size;
+    const glm::vec3 far_bottom_right = m_far_face.m_position + -m_camera_ptr->Right * half_horizontal_size + -m_camera_ptr->Up * half_vertical_size;
+    const glm::vec3 far_bottom_left  = m_far_face.m_position +  m_camera_ptr->Right * half_horizontal_size + -m_camera_ptr->Up * half_vertical_size;
 
     setVertices({
-                {near_top_left,    m_camera_ptr->Front},
-                {near_top_right,   m_camera_ptr->Front},
-                {near_bottom_right,m_camera_ptr->Front},
-                {near_bottom_right,m_camera_ptr->Front},
-                {near_bottom_left, m_camera_ptr->Front},
-                {near_top_left,    m_camera_ptr->Front}
-                }, {0,0,1});
+                {near_top_left,    {0,0,1},m_camera_ptr->Front},
+                {near_top_right,   {0,0,1},m_camera_ptr->Front},
+                {near_bottom_right,{0,0,1},m_camera_ptr->Front},
+                {near_bottom_right,{0,0,1},m_camera_ptr->Front},
+                {near_bottom_left, {0,0,1},m_camera_ptr->Front},
+                {near_top_left,    {0,0,1},m_camera_ptr->Front},
+
+                {far_top_left,    {0,0,1},m_camera_ptr->Front},
+                {far_top_right,   {0,0,1},m_camera_ptr->Front},
+                {far_bottom_right,{0,0,1},m_camera_ptr->Front},
+                {far_bottom_right,{0,0,1},m_camera_ptr->Front},
+                {far_bottom_left, {0,0,1},m_camera_ptr->Front},
+                {far_top_left,    {0,0,1},m_camera_ptr->Front},
+
+                {near_bottom_left, {1,0,0},m_camera_ptr->Front},
+                {near_bottom_right,{1,0,0},m_camera_ptr->Front},
+                {far_bottom_right, {1,0,0},m_camera_ptr->Front},
+                {far_bottom_right, {1,0,0},m_camera_ptr->Front},
+                {far_bottom_left,  {1,0,0},m_camera_ptr->Front},
+                {near_bottom_left, {1,0,0},m_camera_ptr->Front},
+
+                {near_top_left, {1,0,0},m_camera_ptr->Front},
+                {near_top_right,{1,0,0},m_camera_ptr->Front},
+                {far_top_right, {1,0,0},m_camera_ptr->Front},
+                {far_top_right, {1,0,0},m_camera_ptr->Front},
+                {far_top_left,  {1,0,0},m_camera_ptr->Front},
+                {near_top_left, {1,0,0},m_camera_ptr->Front},
+
+                {near_bottom_left,{0,1,0},m_camera_ptr->Front},
+                {far_bottom_left, {0,1,0},m_camera_ptr->Front},
+                {far_top_left,    {0,1,0},m_camera_ptr->Front},
+                {far_top_left,    {0,1,0},m_camera_ptr->Front},
+                {near_top_left,   {0,1,0},m_camera_ptr->Front},
+                {near_bottom_left,{0,1,0},m_camera_ptr->Front},
+
+                {near_bottom_right,{0,1,0},m_camera_ptr->Front},
+                {far_bottom_right, {0,1,0},m_camera_ptr->Front},
+                {far_top_right,    {0,1,0},m_camera_ptr->Front},
+                {far_top_right,    {0,1,0},m_camera_ptr->Front},
+                {near_top_right,   {0,1,0},m_camera_ptr->Front},
+                {near_bottom_right,{0,1,0},m_camera_ptr->Front},
+                });
   }
 
   void draw(unsigned int &VAO, unsigned int &VBO, glm::mat4 &view, DrawWindow &window) override
   {
     if (!freecam_active) return;
-
+  
     glDisable(GL_CULL_FACE);
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
+  
     window.draw(m_vertices, m_shader);
-    glEnable(GL_CULL_FACE);
 
-    if (window.isWireFrame())
-    {
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    }
+   glEnable(GL_CULL_FACE);
   }
 
 private:
@@ -122,6 +152,7 @@ private:
 
   const Camera *m_camera_ptr = nullptr;
   float m_aspect = 0;
+  float m_inv_aspect = 0;
   float m_fovY = 0;
   float m_zNear = 0;
   float m_zFar = 0;

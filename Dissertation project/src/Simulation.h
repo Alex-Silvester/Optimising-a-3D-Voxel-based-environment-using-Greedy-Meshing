@@ -213,7 +213,7 @@ bool Simulation::init()
 	test_frame->initialise(projection, cube_shader.shaderPtr());
 	test_frame->setPosition({ 0,-8,2 });
 
-	test_frustum = Frustum(m_window.getCamera(), 1920.f/1080.f, 90.f, 0.1f, 100.f);
+	test_frustum = Frustum(m_window.getCamera(), 1920.f/1080.f, 90.f, 0.1f, 10.f);
 	test_frustum.initialise(projection, plane_shader.shaderPtr());
 
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true

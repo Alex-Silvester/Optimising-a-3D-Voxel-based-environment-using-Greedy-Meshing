@@ -63,7 +63,7 @@ public:
     this->m_vertices = std::vector<float>(vertices, vertices + vals);
   }
 
-  void setVertices(const std::vector<std::tuple<glm::vec3, glm::vec3>> &vertices, const glm::vec3 &col)
+  void setVertices(const std::vector<std::tuple<glm::vec3, glm::vec3, glm::vec3>> &vertices)
   {
     std::vector<float> new_vertices;
     for (auto& vert : vertices)
@@ -71,12 +71,12 @@ public:
         new_vertices.emplace_back(std::get<0>(vert).x);
         new_vertices.emplace_back(std::get<0>(vert).y);
         new_vertices.emplace_back(std::get<0>(vert).z);
-        new_vertices.emplace_back(col.x);
-        new_vertices.emplace_back(col.y);
-        new_vertices.emplace_back(col.z);
         new_vertices.emplace_back(std::get<1>(vert).x);
         new_vertices.emplace_back(std::get<1>(vert).y);
         new_vertices.emplace_back(std::get<1>(vert).z);
+        new_vertices.emplace_back(std::get<2>(vert).x);
+        new_vertices.emplace_back(std::get<2>(vert).y);
+        new_vertices.emplace_back(std::get<2>(vert).z);
     }
     setVertices(new_vertices);
   }
