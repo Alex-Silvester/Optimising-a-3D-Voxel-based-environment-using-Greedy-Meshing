@@ -43,6 +43,16 @@ public:
 		return faces;
 	}
 
+#if FRUSTUM_CULLING == true
+	void frustumCull(const Frustum &frustum) const
+	{
+		for (Rect *face : faces)
+		{
+			face->testFrustum(frustum);
+		}
+	}
+#endif
+
 private:
 
 	float axis_pos(const Rect* face, Axis_t axis = EMPTY) const

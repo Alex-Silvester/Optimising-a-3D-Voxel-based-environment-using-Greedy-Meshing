@@ -66,12 +66,24 @@ public:
     m_up_face =   { cam_pos, glm::cross(m_camera_ptr->Right, scaled_forward_vector - m_camera_ptr->Up * half_vertical_side_length) };
     m_down_face = { cam_pos, glm::cross(scaled_forward_vector + m_camera_ptr->Up * half_vertical_side_length, m_camera_ptr->Right) };
 
-    updateVertices(half_vertical_side_length, half_horizontal_side_length, scaled_forward_vector);
+    updateVertices(half_vertical_side_length, half_horizontal_side_length);
+  }
+
+  bool inFrustum(const glm::vec3 &point) const
+  {
+    if (inFrontOfPlane(point, m_near_face))  return true;
+    if (inFrontOfPlane(point, m_far_face))   return true;
+    if (inFrontOfPlane(point, m_left_face))  return true;
+    if (inFrontOfPlane(point, m_right_face)) return true;
+    if (inFrontOfPlane(point, m_up_face))    return true;
+    if (inFrontOfPlane(point, m_down_face))  return true;
+
+    return false;
   }
 
 private:
 
-  void updateVertices(float half_vertical_size, float half_horizontal_size, const glm::vec3 &far_vec)
+  void updateVertices(float half_vertical_size, float half_horizontal_size)
   {
     const glm::vec3 near_top_left     = m_near_face.m_position +  m_camera_ptr->Right +  m_camera_ptr->Up * m_inv_aspect;
     const glm::vec3 near_top_right    = m_near_face.m_position + -m_camera_ptr->Right +  m_camera_ptr->Up * m_inv_aspect;
@@ -126,6 +138,11 @@ private:
                 {near_top_right,   {0,1,0},m_camera_ptr->Front},
                 {near_bottom_right,{0,1,0},m_camera_ptr->Front},
                 });
+  }
+
+  bool inFrontOfPlane(const glm::vec3 &point, const Plane &plane) const
+  {
+    return glm::dot(plane.m_normal, point - plane.m_position) > 0;
   }
 
   void draw(unsigned int &VAO, unsigned int &VBO, glm::mat4 &view, DrawWindow &window) override

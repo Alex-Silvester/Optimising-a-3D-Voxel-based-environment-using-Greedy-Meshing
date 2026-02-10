@@ -1,9 +1,13 @@
 #pragma once
 
 #include "../Interfaces/IDrawable.h"
+
 #include <cmath>
 #include <glm/fwd.hpp>
+
 #include "../Shader Types/shader.h"
+
+#include "Frustum.h"
 
 enum Axis_t
 {
@@ -264,6 +268,21 @@ public:
 	{
 		return m_position + m_scale / 2.f;
 	}
+
+#if FRUSTUM_CULLING == true
+	void testFrustum(const Frustum &frustum)
+	{
+		setFrustumPass(true);
+		for (const glm::vec3 &point : corner_positions)
+		{
+			if (!frustum.inFrustum(point))
+			{
+				setFrustumPass(false);
+				break;
+			}
+		}
+	}
+#endif
 
 private:
 	Axis_t m_current_axis = Axis_t::EMPTY;

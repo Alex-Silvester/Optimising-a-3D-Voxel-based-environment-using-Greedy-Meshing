@@ -127,7 +127,7 @@ private:
 
 	DrawWindow m_window{ 1920, 1080, "window" };
 
-	static constexpr glm::vec<3, int> m_world_size = {20, 20, 20};
+	static constexpr glm::vec<3, int> m_world_size = {50, 20, 50};
 	std::vector<Cube> cubes;
 
 	CubeShader cube_shader = CubeShader();
@@ -158,7 +158,7 @@ private:
 
 	WireFrame<Cube> test_frame;
 
-	Frustum test_frustum;
+	WireFrame<Frustum> view_frustum;
 
 #if FREECAM_ACTIVE == true
 	Particle<Rect>* freecam_particle = nullptr;
@@ -196,6 +196,7 @@ bool Simulation::init()
 
 	billboard_shader.use();
 	billboard_shader.setProjection(projection);
+	billboard_shader.setAlpha(0.5f);
 
 	plane_shader.use();
 	plane_shader.setProjection(projection);
@@ -213,8 +214,8 @@ bool Simulation::init()
 	test_frame->initialise(projection, cube_shader.shaderPtr());
 	test_frame->setPosition({ 0,-8,2 });
 
-	test_frustum = Frustum(m_window.getCamera(), 1920.f/1080.f, 90.f, 0.1f, 10.f);
-	test_frustum.initialise(projection, plane_shader.shaderPtr());
+	view_frustum.getShape() = Frustum(m_window.getCamera(), 1920.f / 1080.f, 90.f, 0.1f, 100.f);
+	view_frustum.initialise(projection, plane_shader.shaderPtr());
 
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
 	faces.resize(x_axis.getFaces().size() + y_axis.getFaces().size() + z_axis.getFaces().size());
@@ -399,6 +400,19 @@ void Simulation::update()
 		current_face->setColor({ 1.f,0.f,0.f });
 	}
 #endif
+
+#if FRUSTUM_CULLING == true
+
+		view_frustum->updateFaces();
+
+#if COLLECT_FACES == true
+#else
+	x_axis.frustumCull(view_frustum.getShape());
+	y_axis.frustumCull(view_frustum.getShape());
+	z_axis.frustumCull(view_frustum.getShape());
+#endif
+
+#endif
 }
 
 void Simulation::render()
@@ -440,9 +454,7 @@ void Simulation::render()
 	{
 		m_window.draw(*freecam_particle);
 	}
-
-	test_frustum.updateFaces();
-	m_window.draw(test_frustum);
+	m_window.draw(view_frustum);
 }
 
 void Simulation::worldCreation()

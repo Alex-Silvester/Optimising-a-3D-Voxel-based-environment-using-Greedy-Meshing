@@ -197,6 +197,13 @@ public:
     always_rendered = _always_rendered;
   }
 
+#if FRUSTUM_CULLING == true
+  void setFrustumPass(bool pass)
+  {
+    passed_frustum = pass;
+  }
+#endif
+
   bool freecam_active = false;
   bool passed = false;
   int face_passed = true;
@@ -328,7 +335,10 @@ private:
   int passed = 0;
 #endif
 
-  bool prev_passed = true;
+#if FRUSTUM_CULLING == true
+  bool passed_frustum;
+#endif
+
   int layer = 0;
 
 };
