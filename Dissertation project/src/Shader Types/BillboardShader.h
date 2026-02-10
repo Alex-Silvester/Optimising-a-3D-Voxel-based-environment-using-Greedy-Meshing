@@ -25,6 +25,11 @@ public:
 		setMat4("projection", projection);
 	}
 
+	void setAlpha(float alpha)
+	{
+		setFloat("alpha", alpha);
+	}
+
 	Shader *shaderPtr()
 	{
 		if (Shader *ptr = dynamic_cast<Shader *>(this))

@@ -63,6 +63,24 @@ public:
     this->m_vertices = std::vector<float>(vertices, vertices + vals);
   }
 
+  void setVertices(const std::vector<std::tuple<glm::vec3, glm::vec3, glm::vec3>> &vertices)
+  {
+    std::vector<float> new_vertices;
+    for (auto& vert : vertices)
+    {
+        new_vertices.emplace_back(std::get<0>(vert).x);
+        new_vertices.emplace_back(std::get<0>(vert).y);
+        new_vertices.emplace_back(std::get<0>(vert).z);
+        new_vertices.emplace_back(std::get<1>(vert).x);
+        new_vertices.emplace_back(std::get<1>(vert).y);
+        new_vertices.emplace_back(std::get<1>(vert).z);
+        new_vertices.emplace_back(std::get<2>(vert).x);
+        new_vertices.emplace_back(std::get<2>(vert).y);
+        new_vertices.emplace_back(std::get<2>(vert).z);
+    }
+    setVertices(new_vertices);
+  }
+
   Shader& getShader()
   {
     return *m_shader;
@@ -178,6 +196,13 @@ public:
   {
     always_rendered = _always_rendered;
   }
+
+#if FRUSTUM_CULLING == true
+  void setFrustumPass(bool pass)
+  {
+    passed_frustum = pass;
+  }
+#endif
 
   bool freecam_active = false;
   bool passed = false;
@@ -298,9 +323,10 @@ protected:
 
   bool always_rendered = false;
 
+  Shader* m_shader = nullptr;
+
 private:
 
-  Shader* m_shader = nullptr;
 
   glm::vec3 m_color = { 0.f,1.f,0.f };
 
@@ -309,7 +335,10 @@ private:
   int passed = 0;
 #endif
 
-  bool prev_passed = true;
+#if FRUSTUM_CULLING == true
+  bool passed_frustum;
+#endif
+
   int layer = 0;
 
 };

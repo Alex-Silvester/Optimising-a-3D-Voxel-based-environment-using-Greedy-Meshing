@@ -25,6 +25,9 @@
 //Does a pre-pass on the z-buffer to fill it out before rendering all of the geometry fully
 #define Z_BUFFER_PRE_PASS false
 
+//turns on and off frustum culling
+#define FRUSTUM_CULLING true
+
 /*----------Simulation----------*/
 
 
