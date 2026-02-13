@@ -54,15 +54,15 @@ public:
     glEnableVertexAttribArray(2);
   }
 
-  void draw(IDrawable& drawable)
+  void draw(IDrawable& drawable, unsigned int draw_mode = GL_TRIANGLES)
   {
     drawable.freecam_active = m_freecam_active;
 
     glm::mat4 view = current_camera->GetViewMatrix();
-    drawable.draw(VAO, VBO, view, *this);
+    drawable.draw(VAO, VBO, view, *this, draw_mode);
   }
 
-  void draw(const std::vector<float>& vertices, Shader* shader)
+  void draw(const std::vector<float>& vertices, Shader* shader, unsigned int draw_mode = GL_TRIANGLES)
   {
     glm::mat4 view = current_camera->GetViewMatrix();
 
@@ -82,7 +82,7 @@ public:
     model = glm::translate(model, glm::vec3(0.f));
     shader->setMat4("model", model);
 
-    glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 9);
+    glDrawArrays(draw_mode, 0, vertices.size() / 9);
   }
 
   bool initialise(float size_x = SCREEN_WIDTH, float size_y = SCREEN_HEIGHT, const char *name = "") override

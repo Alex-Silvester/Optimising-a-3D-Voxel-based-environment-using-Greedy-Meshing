@@ -158,7 +158,7 @@ private:
 
 	WireFrame<Cube> test_frame;
 
-	WireFrame<Frustum> view_frustum;
+	Frustum view_frustum;
 
 #if FREECAM_ACTIVE == true
 	Particle<Rect>* freecam_particle = nullptr;
@@ -196,10 +196,11 @@ bool Simulation::init()
 
 	billboard_shader.use();
 	billboard_shader.setProjection(projection);
-	billboard_shader.setAlpha(0.5f);
 
 	plane_shader.use();
-	plane_shader.setProjection(projection);
+	plane_shader.setProjection(projection)
+		.setLightIntensity(0.5f)
+		.setAmbientIntensity(0.3f);
 
 	//world setup
 	crosshair.initialise(projection, hud_shader.shaderPtr());
@@ -214,7 +215,7 @@ bool Simulation::init()
 	test_frame->initialise(projection, cube_shader.shaderPtr());
 	test_frame->setPosition({ 0,-8,2 });
 
-	view_frustum.getShape() = Frustum(m_window.getCamera(), 1920.f / 1080.f, 90.f, 0.1f, 100.f);
+	view_frustum = Frustum(m_window.getCamera(), 1920.f / 1080.f, 90.f, 0.1f, 100.f);
 	view_frustum.initialise(projection, plane_shader.shaderPtr());
 
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
@@ -403,13 +404,16 @@ void Simulation::update()
 
 #if FRUSTUM_CULLING == true
 
-		view_frustum->updateFaces();
+	view_frustum.updateFaces();
+
+	plane_shader.use();
+	plane_shader.setLightPosition(view_frustum.getCenter());
 
 #if COLLECT_FACES == true
 #else
-	x_axis.frustumCull(view_frustum.getShape());
-	y_axis.frustumCull(view_frustum.getShape());
-	z_axis.frustumCull(view_frustum.getShape());
+	x_axis.frustumCull(view_frustum);
+	y_axis.frustumCull(view_frustum);
+	z_axis.frustumCull(view_frustum);
 #endif
 
 #endif

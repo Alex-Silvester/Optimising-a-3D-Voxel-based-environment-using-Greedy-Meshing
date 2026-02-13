@@ -212,7 +212,7 @@ private:
 
   friend class DrawWindow;
 	
-	virtual void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window)
+	virtual void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window, unsigned int draw_mode = GL_TRIANGLES)
   {
     m_shader->use();
     m_shader->setMat4("view", view);
@@ -241,7 +241,7 @@ private:
 
     glBeginQuery(GL_ANY_SAMPLES_PASSED, occ_query);
 
-    glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+    glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
 
     glEndQuery(GL_ANY_SAMPLES_PASSED);
 
@@ -253,7 +253,7 @@ private:
 
     if (prev_passed)
     {
-      drawVertices()
+      drawVertices(draw_mode)
       prev_passed = (passed != 0);
     }
     else
@@ -263,18 +263,18 @@ private:
     }
   #else
 
-    drawVertices();
+    drawVertices(draw_mode);
 
   #endif
 	}
 
-  void drawVertices()
+  void drawVertices(unsigned int draw_mode)
   {
   #if FREECAM_ACTIVE == true
 
     if (always_rendered)
     {
-      glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+      glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
       return;
     }
 
@@ -291,7 +291,7 @@ private:
 
       glBeginQuery(GL_ANY_SAMPLES_PASSED, query);
 
-      glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+      glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
 
       glEndQuery(GL_ANY_SAMPLES_PASSED);
 
@@ -308,10 +308,10 @@ private:
 
     if (face_passed != 0)
     {
-      glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+      glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
     }
   #else
-    glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+    glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
   #endif
   }
   

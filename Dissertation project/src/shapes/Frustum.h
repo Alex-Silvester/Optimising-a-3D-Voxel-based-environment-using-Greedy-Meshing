@@ -81,6 +81,17 @@ public:
     return false;
   }
 
+  glm::vec3 getCenter()
+  {
+    return (
+      m_near_face .m_position +
+      m_far_face  .m_position +
+      m_left_face .m_position +
+      m_right_face.m_position +
+      m_up_face   .m_position +
+      m_down_face .m_position)/6.f;
+  }
+
 private:
 
   void updateVertices(float half_vertical_size, float half_horizontal_size)
@@ -96,47 +107,52 @@ private:
     const glm::vec3 far_bottom_left  = m_far_face.m_position +  m_camera_ptr->Right * half_horizontal_size + -m_camera_ptr->Up * half_vertical_size;
 
     setVertices({
-                {near_top_left,    {0,0,1},m_camera_ptr->Front},
-                {near_top_right,   {0,0,1},m_camera_ptr->Front},
-                {near_bottom_right,{0,0,1},m_camera_ptr->Front},
-                {near_bottom_right,{0,0,1},m_camera_ptr->Front},
-                {near_bottom_left, {0,0,1},m_camera_ptr->Front},
-                {near_top_left,    {0,0,1},m_camera_ptr->Front},
+                {near_top_left,     {0,0,1}, m_near_face.m_normal},
+                {near_top_right,    {0,0,1}, m_near_face.m_normal},
+                {near_bottom_right, {0,0,1}, m_near_face.m_normal},
+                {near_bottom_right, {0,0,1}, m_near_face.m_normal},
+                {near_bottom_left,  {0,0,1}, m_near_face.m_normal},
+                {near_top_left,     {0,0,1}, m_near_face.m_normal},
 
-                {far_top_left,    {0,0,1},m_camera_ptr->Front},
-                {far_top_right,   {0,0,1},m_camera_ptr->Front},
-                {far_bottom_right,{0,0,1},m_camera_ptr->Front},
-                {far_bottom_right,{0,0,1},m_camera_ptr->Front},
-                {far_bottom_left, {0,0,1},m_camera_ptr->Front},
-                {far_top_left,    {0,0,1},m_camera_ptr->Front},
 
-                {near_bottom_left, {1,0,0},m_camera_ptr->Front},
-                {near_bottom_right,{1,0,0},m_camera_ptr->Front},
-                {far_bottom_right, {1,0,0},m_camera_ptr->Front},
-                {far_bottom_right, {1,0,0},m_camera_ptr->Front},
-                {far_bottom_left,  {1,0,0},m_camera_ptr->Front},
-                {near_bottom_left, {1,0,0},m_camera_ptr->Front},
+                {far_top_left,     {0,0,1}, m_far_face.m_normal},
+                {far_bottom_left,  {0,0,1}, m_far_face.m_normal},
+                {far_bottom_right, {0,0,1}, m_far_face.m_normal},
+                {far_bottom_right, {0,0,1}, m_far_face.m_normal},
+                {far_top_right,    {0,0,1}, m_far_face.m_normal},
+                {far_top_left,     {0,0,1}, m_far_face.m_normal},
 
-                {near_top_left, {1,0,0},m_camera_ptr->Front},
-                {near_top_right,{1,0,0},m_camera_ptr->Front},
-                {far_top_right, {1,0,0},m_camera_ptr->Front},
-                {far_top_right, {1,0,0},m_camera_ptr->Front},
-                {far_top_left,  {1,0,0},m_camera_ptr->Front},
-                {near_top_left, {1,0,0},m_camera_ptr->Front},
 
-                {near_bottom_left,{0,1,0},m_camera_ptr->Front},
-                {far_bottom_left, {0,1,0},m_camera_ptr->Front},
-                {far_top_left,    {0,1,0},m_camera_ptr->Front},
-                {far_top_left,    {0,1,0},m_camera_ptr->Front},
-                {near_top_left,   {0,1,0},m_camera_ptr->Front},
-                {near_bottom_left,{0,1,0},m_camera_ptr->Front},
+                {near_bottom_left,  {1,0,0}, m_down_face.m_normal},
+                {near_bottom_right, {1,0,0}, m_down_face.m_normal},
+                {far_bottom_right,  {1,0,0}, m_down_face.m_normal},
+                {far_bottom_right,  {1,0,0}, m_down_face.m_normal},
+                {far_bottom_left,   {1,0,0}, m_down_face.m_normal},
+                {near_bottom_left,  {1,0,0}, m_down_face.m_normal},
 
-                {near_bottom_right,{0,1,0},m_camera_ptr->Front},
-                {far_bottom_right, {0,1,0},m_camera_ptr->Front},
-                {far_top_right,    {0,1,0},m_camera_ptr->Front},
-                {far_top_right,    {0,1,0},m_camera_ptr->Front},
-                {near_top_right,   {0,1,0},m_camera_ptr->Front},
-                {near_bottom_right,{0,1,0},m_camera_ptr->Front},
+
+                {near_top_right, {1,0,0}, m_up_face.m_normal},
+                {near_top_left,  {1,0,0}, m_up_face.m_normal},
+                {far_top_left,   {1,0,0}, m_up_face.m_normal},
+                {far_top_left,   {1,0,0}, m_up_face.m_normal},
+                {far_top_right,  {1,0,0}, m_up_face.m_normal},
+                {near_top_right, {1,0,0}, m_up_face.m_normal},
+
+
+                {near_bottom_left, {0,1,0}, m_left_face.m_normal},
+                {far_bottom_left,  {0,1,0}, m_left_face.m_normal},
+                {far_top_left,     {0,1,0}, m_left_face.m_normal},
+                {far_top_left,     {0,1,0}, m_left_face.m_normal},
+                {near_top_left,    {0,1,0}, m_left_face.m_normal},
+                {near_bottom_left, {0,1,0}, m_left_face.m_normal},
+
+
+                {near_bottom_right, {0,1,0}, m_right_face.m_normal},
+                {near_top_right,    {0,1,0}, m_right_face.m_normal},
+                {far_top_right,     {0,1,0}, m_right_face.m_normal},
+                {far_top_right,     {0,1,0}, m_right_face.m_normal},
+                {far_bottom_right,  {0,1,0}, m_right_face.m_normal},
+                {near_bottom_right, {0,1,0}, m_right_face.m_normal},
                 });
   }
 
@@ -145,15 +161,15 @@ private:
     return glm::dot(plane.m_normal, point - plane.m_position) > 0;
   }
 
-  void draw(unsigned int &VAO, unsigned int &VBO, glm::mat4 &view, DrawWindow &window) override
+  void draw(unsigned int &VAO, unsigned int &VBO, glm::mat4 &view, DrawWindow &window, unsigned int draw_mode = GL_TRIANGLES) override
   {
     if (!freecam_active) return;
-  
+
     glDisable(GL_CULL_FACE);
-  
+
     window.draw(m_vertices, m_shader);
 
-   glEnable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
   }
 
 private:
