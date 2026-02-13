@@ -95,7 +95,7 @@ private:
 		}
 	}
 
-	void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window) override
+	void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window, unsigned int draw_mode = GL_TRIANGLES) override
 	{
 #if USE_INSTANCING == false
 		for (Rect* face : faces)
