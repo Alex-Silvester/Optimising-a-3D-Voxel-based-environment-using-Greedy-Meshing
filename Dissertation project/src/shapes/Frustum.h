@@ -39,7 +39,7 @@ public:
     m_camera_ptr (&cam  ),
     m_aspect     (aspect),
     m_inv_aspect (1.f/aspect),
-    m_fovY       (fovY  ),
+    m_fovY       (fovY),
     m_zNear      (zNear ),
     m_zFar       (zFar  )
   {
@@ -54,7 +54,7 @@ public:
   void updateFaces()
   {
     //side lengths of the far plane
-    const float half_vertical_side_length = m_zFar * tanf(m_fovY * .5f);
+    const float half_vertical_side_length = m_zFar * tanf(m_fovY * PI / 180.f * .5f);
     const float half_horizontal_side_length = half_vertical_side_length * m_aspect;
 
     //camera forward vector scaled by the far distance
@@ -95,6 +95,11 @@ public:
       m_right_face.m_position +
       m_up_face   .m_position +
       m_down_face .m_position)/6.f;
+  }
+
+  float &getFovY()
+  {
+    return m_fovY;
   }
 
 private:

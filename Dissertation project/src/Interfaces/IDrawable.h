@@ -212,7 +212,7 @@ private:
 	
 	virtual void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window, unsigned int draw_mode = GL_TRIANGLES)
   {
-  #if FRUSTUM_CULL == true
+  #if FRUSTUM_CULLING == true
     if (passed_frustum == false) return;
   #endif
 
@@ -239,7 +239,7 @@ private:
     {
       glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
       return;
-    }   
+    }
 
 #if OCCLUSION_CULL_QUERY == true
 

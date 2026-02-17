@@ -215,7 +215,7 @@ bool Simulation::init()
 	test_frame->initialise(projection, cube_shader.shaderPtr());
 	test_frame->setPosition({ 0,-8,2 });
 
-	view_frustum = Frustum(m_window.getCamera(), 1920.f / 1080.f, 90.f, 0.1f, 100.f);
+	view_frustum = Frustum(m_window.getCamera(), 1920.f / 1080.f, 45.f, 0.1f, 100.f);
 	view_frustum.initialise(projection, plane_shader.shaderPtr());
 
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
@@ -400,6 +400,9 @@ void Simulation::update()
 	ImGui::Text("Position: [%.1f, %.1f, %.1f]", m_selected_position.x, m_selected_position.y, m_selected_position.z);
 	ImGui::Text("Center: [%.1f, %.1f, %.1f]", m_selected_center.x, m_selected_center.y, m_selected_center.z);
 	ImGui::Text("Scale: [%.1f, %.1f, %.1f]", m_selected_scale.x, m_selected_scale.y, m_selected_scale.z);
+
+	ImGui::SliderFloat("FovY", &view_frustum.getFovY(), 0.f, 180.f, "%.1f");
+
 #endif
 	ImGui::End();
 #endif
