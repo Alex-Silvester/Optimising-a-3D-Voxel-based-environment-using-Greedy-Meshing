@@ -273,12 +273,12 @@ public:
 	void testFrustum(const Frustum &frustum)
 	{
 		setFrustumPass(false);
-		for (const glm::vec3 &point : corner_positions)
+		for (const glm::vec3 &point : getCorners())
 		{
 			if (frustum.inFrustum(point))
 			{
 				setFrustumPass(true);
-				break;
+				return;
 			}
 		}
 	}

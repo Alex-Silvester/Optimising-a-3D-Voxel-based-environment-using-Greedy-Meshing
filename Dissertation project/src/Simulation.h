@@ -341,6 +341,16 @@ void Simulation::update()
 	});
 #endif
 
+#if FACE_CHECKING == true
+	Rect *current_face = getSelectedFace();
+
+	if (current_face != nullptr)
+	{
+		current_face->setColor({ 1.f,0.f,0.f });
+	}
+
+#endif
+
 #if USE_IMGUI == true
 
 	time_passed += m_fps;
@@ -381,7 +391,6 @@ void Simulation::update()
 	ImGui::Text("Average FPS: %.f", average_fps);
 
 #if FACE_CHECKING == true
-	Rect *current_face = getSelectedFace();
 	if (ImGui::Button("Get Face Data")  && current_face != nullptr)
 	{
 		m_selected_position = current_face->getPosition();
@@ -395,13 +404,6 @@ void Simulation::update()
 	ImGui::End();
 #endif
 
-#if FACE_CHECKING == true
-	if (current_face != nullptr)
-	{
-		current_face->setColor({ 1.f,0.f,0.f });
-	}
-#endif
-
 #if FRUSTUM_CULLING == true
 
 	view_frustum.updateFaces();
@@ -409,7 +411,12 @@ void Simulation::update()
 	plane_shader.use();
 	plane_shader.setLightPosition(view_frustum.getCenter());
 
+
 #if COLLECT_FACES == true
+	for (Rect *face : faces)
+	{
+		face->testFrustum(view_frustum);
+	}
 #else
 	x_axis.frustumCull(view_frustum);
 	y_axis.frustumCull(view_frustum);
@@ -421,6 +428,15 @@ void Simulation::update()
 
 void Simulation::render()
 {
+	if (freecam_particle != nullptr)
+	{
+		m_window.draw(*freecam_particle);
+	}
+
+#if FRUSTUM_CULLING == true
+	m_window.draw(view_frustum);
+#endif
+
 #if Z_BUFFER_PRE_PASS == true
 
 	// z-prepass
@@ -429,7 +445,25 @@ void Simulation::render()
 	glColorMask(0, 0, 0, 0);  // Disable color, it's useless, we only want depth.
 	glDepthMask(GL_TRUE);     // Ask z writing
 
-	drawFaces();
+#if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
+	for (Rect *face : faces)
+	{
+		m_window.draw(*face, GL_NONE);
+	}
+#else
+	for (Rect *face : x_axis.getFaces())
+	{
+		m_window.draw(*face, GL_NONE);
+	}
+	for (Rect *face : y_axis.getFaces())
+	{
+		m_window.draw(*face, GL_NONE);
+	}
+	for (Rect *face : z_axis.getFaces())
+	{
+		m_window.draw(*face, GL_NONE);
+	}
+#endif
 
 	// real render
 	//glEnable(GL_DEPTH_TEST);  // We still want depth test
@@ -453,12 +487,6 @@ void Simulation::render()
 
 	m_window.draw(crosshair);
 	m_window.draw(test_frame);
-
-	if(freecam_particle != nullptr)
-	{
-		m_window.draw(*freecam_particle);
-	}
-	m_window.draw(view_frustum);
 }
 
 void Simulation::worldCreation()
@@ -523,15 +551,18 @@ inline void Simulation::drawFaces()
 {
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
 
+  #if Z_BUFFER_PRE_PASS == false
 	std::sort(faces.begin(), faces.end(), [this](Rect *a, Rect *b)
 	{
 		return glm::distance(a->getCenter(), m_window.getCamera().Position) < glm::distance(b->getCenter(), m_window.getCamera().Position);
 	});
+  #endif
 
-	for (Rect *&face : faces)
+	for (Rect *face : faces)
 	{
 		m_window.draw(*face);
 	}
+
 #else
 	m_window.draw(x_axis);
 	m_window.draw(y_axis);
