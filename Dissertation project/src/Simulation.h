@@ -522,6 +522,12 @@ inline void Simulation::axesSplitting()
 inline void Simulation::drawFaces()
 {
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
+
+	std::sort(faces.begin(), faces.end(), [this](Rect *a, Rect *b)
+	{
+		return glm::distance(a->getCenter(), m_window.getCamera().Position) < glm::distance(b->getCenter(), m_window.getCamera().Position);
+	});
+
 	for (Rect *&face : faces)
 	{
 		m_window.draw(*face);

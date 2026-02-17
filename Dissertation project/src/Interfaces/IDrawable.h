@@ -233,34 +233,44 @@ private:
     m_shader->setMat4("model", model);
     
 
-  #if OCCLUSION_CULL_QUERY == true
-    glGenQueries(1, &occ_query);
+#if OCCLUSION_CULL_QUERY == true
 
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    glDepthMask(GL_FALSE);
+    int occ_passed;
 
-    glBeginQuery(GL_ANY_SAMPLES_PASSED, occ_query);
-
-    glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
-
-    glEndQuery(GL_ANY_SAMPLES_PASSED);
-
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glDepthMask(GL_TRUE);
-
-    glGetQueryObjectiv(occ_query, GL_QUERY_RESULT, &passed);
-    
-
-    if (prev_passed)
+    if (!freecam_active)
     {
-      drawVertices(draw_mode)
-      prev_passed = (passed != 0);
+      GLuint occ_query;
+
+      glGenQueries(1, &occ_query);
+
+      glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+      glDepthMask(GL_FALSE);
+
+      glBeginQuery(GL_ANY_SAMPLES_PASSED, occ_query);
+
+      glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
+
+      glEndQuery(GL_ANY_SAMPLES_PASSED);
+
+      glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+      glDepthMask(GL_TRUE);
+
+      glGetQueryObjectiv(occ_query, GL_QUERY_RESULT, &occ_passed);
+
+      passed = (occ_passed != 0);
+
+      if (passed)
+      {
+        drawVertices(draw_mode);
+      }
+
+      passed = (occ_passed != 0);
     }
-    else
+    else if(passed)
     {
-      prev_passed = (passed != 0);
-      return;
+      glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
     }
+
   #else
 
     drawVertices(draw_mode);
@@ -329,11 +339,6 @@ private:
 
 
   glm::vec3 m_color = { 0.f,1.f,0.f };
-
-#if OCCLUSION_CULL_QUERY == true
-  GLuint occ_query;
-  int passed = 0;
-#endif
 
 #if FRUSTUM_CULLING == true
   bool passed_frustum;

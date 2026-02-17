@@ -34,7 +34,7 @@
 /*----------IDrawable-----------*/
 
 //Add occlusion culling to every drawable object (not the most efficient)
-#define OCCLUSION_CULL_QUERY false
+#define OCCLUSION_CULL_QUERY true
 
 /*----------IDrawable-----------*/
 
