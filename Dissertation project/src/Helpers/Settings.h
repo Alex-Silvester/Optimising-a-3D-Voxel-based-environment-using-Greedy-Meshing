@@ -20,13 +20,16 @@
 #define USE_NOISE true
 
 //Take faces from the axis objects and put them into one array
-#define COLLECT_FACES false
+#define COLLECT_FACES true
 
 //Does a pre-pass on the z-buffer to fill it out before rendering all of the geometry fully
-#define Z_BUFFER_PRE_PASS false
+#define Z_BUFFER_PRE_PASS true
 
 //turns on and off frustum culling
 #define FRUSTUM_CULLING true
+
+//show closest points
+#define CLOSEST_POINTS false;
 
 /*----------Simulation----------*/
 

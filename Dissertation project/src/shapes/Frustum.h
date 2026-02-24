@@ -8,6 +8,11 @@ struct Plane
   Plane() = default;
   Plane(const glm::vec3 &pos, const glm::vec3 &norm) : m_position(pos), m_normal(norm) {}
 
+  bool inFront(const glm::vec3 &point) const
+  {
+    return glm::dot(m_normal, point - m_position) > 0;
+  }
+
   glm::vec3 m_position = { 0.f,0.f,0.f };
   glm::vec3 m_normal = { 0.f,0.f,0.f, };
 };
@@ -34,7 +39,7 @@ public:
     m_camera_ptr (&cam  ),
     m_aspect     (aspect),
     m_inv_aspect (1.f/aspect),
-    m_fovY       (fovY  ),
+    m_fovY       (fovY),
     m_zNear      (zNear ),
     m_zFar       (zFar  )
   {
@@ -49,7 +54,7 @@ public:
   void updateFaces()
   {
     //side lengths of the far plane
-    const float half_vertical_side_length = m_zFar * tanf(m_fovY * .5f);
+    const float half_vertical_side_length = m_zFar * tanf(m_fovY * PI / 180.f * .5f);
     const float half_horizontal_side_length = half_vertical_side_length * m_aspect;
 
     //camera forward vector scaled by the far distance
@@ -71,14 +76,14 @@ public:
 
   bool inFrustum(const glm::vec3 &point) const
   {
-    if (inFrontOfPlane(point, m_near_face))  return true;
-    if (inFrontOfPlane(point, m_far_face))   return true;
-    if (inFrontOfPlane(point, m_left_face))  return true;
-    if (inFrontOfPlane(point, m_right_face)) return true;
-    if (inFrontOfPlane(point, m_up_face))    return true;
-    if (inFrontOfPlane(point, m_down_face))  return true;
+    if (!m_near_face.inFront(point))  return false;
+    if (!m_far_face.inFront(point))   return false;
+    if (!m_left_face.inFront(point))  return false;
+    if (!m_right_face.inFront(point)) return false;
+    if (!m_up_face.inFront(point))    return false;
+    if (!m_down_face.inFront(point))  return false;
 
-    return false;
+    return true;
   }
 
   glm::vec3 getCenter()
@@ -90,6 +95,11 @@ public:
       m_right_face.m_position +
       m_up_face   .m_position +
       m_down_face .m_position)/6.f;
+  }
+
+  float &getFovY()
+  {
+    return m_fovY;
   }
 
 private:
@@ -154,11 +164,6 @@ private:
                 {far_bottom_right,  {0,1,0}, m_right_face.m_normal},
                 {near_bottom_right, {0,1,0}, m_right_face.m_normal},
                 });
-  }
-
-  bool inFrontOfPlane(const glm::vec3 &point, const Plane &plane) const
-  {
-    return glm::dot(plane.m_normal, point - plane.m_position) > 0;
   }
 
   void draw(unsigned int &VAO, unsigned int &VBO, glm::mat4 &view, DrawWindow &window, unsigned int draw_mode = GL_TRIANGLES) override

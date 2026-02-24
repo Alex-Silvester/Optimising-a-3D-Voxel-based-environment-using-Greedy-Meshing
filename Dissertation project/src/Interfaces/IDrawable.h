@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <print>
+#include <concepts>
 
 #include "../Shader Types/CubeShader.h"
 #include "../Window/DrawWindow.h"
@@ -16,7 +17,8 @@ class IDrawable;
 template<class T>
 concept Drawable = requires(T t)
 {
-  dynamic_cast<IDrawable *>(&t);
+  true;
+  //dynamic_cast<IDrawable *>(&t);
 };
 
 class IDrawable
@@ -117,11 +119,6 @@ public:
     return global_vertices;
   }
 
-  virtual void setPosition(const glm::vec3& pos)
-  {
-    m_position = pos;
-  }
-
   void scale(glm::vec3 scale, glm::vec3 offset = {0,0,0})
   {
     m_scale *= scale;
@@ -150,6 +147,11 @@ public:
         }
       }
     }
+  }
+
+  virtual void setPosition(const glm::vec3& pos)
+  {
+    m_position = pos;
   }
 
   virtual const glm::vec3& getPosition() const
@@ -205,8 +207,6 @@ public:
 #endif
 
   bool freecam_active = false;
-  bool passed = false;
-  int face_passed = true;
 
 private:
 
@@ -214,6 +214,10 @@ private:
 	
 	virtual void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window, unsigned int draw_mode = GL_TRIANGLES)
   {
+  #if FRUSTUM_CULLING == true
+    if (passed_frustum == false) return;
+  #endif
+
     m_shader->use();
     m_shader->setMat4("view", view);
     m_shader->setVec3("position", m_position);
@@ -231,36 +235,52 @@ private:
     glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
     model = glm::translate(model, glm::vec3(0.f));
     m_shader->setMat4("model", model);
-    
 
-  #if OCCLUSION_CULL_QUERY == true
-    glGenQueries(1, &occ_query);
-
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    glDepthMask(GL_FALSE);
-
-    glBeginQuery(GL_ANY_SAMPLES_PASSED, occ_query);
-
-    glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
-
-    glEndQuery(GL_ANY_SAMPLES_PASSED);
-
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glDepthMask(GL_TRUE);
-
-    glGetQueryObjectiv(occ_query, GL_QUERY_RESULT, &passed);
-    
-
-    if (prev_passed)
+    //if the draw node is none, then draw with a default draw mode
+    if (draw_mode == GL_NONE)
     {
-      drawVertices(draw_mode)
-      prev_passed = (passed != 0);
-    }
-    else
-    {
-      prev_passed = (passed != 0);
+      glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
       return;
     }
+
+#if OCCLUSION_CULL_QUERY == true
+
+    int occ_passed;
+
+    if (!freecam_active)
+    {
+      GLuint occ_query;
+
+      glGenQueries(1, &occ_query);
+
+      glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+      glDepthMask(GL_FALSE);
+
+      glBeginQuery(GL_ANY_SAMPLES_PASSED, occ_query);
+
+      glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
+
+      glEndQuery(GL_ANY_SAMPLES_PASSED);
+
+      glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+      glDepthMask(GL_TRUE);
+
+      glGetQueryObjectiv(occ_query, GL_QUERY_RESULT, &occ_passed);
+
+      occlusion_passed = (occ_passed != 0);
+
+      if (occlusion_passed)
+      {
+        drawVertices(draw_mode);
+      }
+
+      occlusion_passed = (occ_passed != 0);
+    }
+    else if(occlusion_passed)
+    {
+      glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
+    }
+
   #else
 
     drawVertices(draw_mode);
@@ -278,38 +298,29 @@ private:
       return;
     }
 
-    if (freecam_active && !passed)
+    if (freecam_active && first_freecam_pass)
     {
-      passed = true;
+      first_freecam_pass = false;
 
-      GLuint query;
+    #if OCCLUSION_CULL_QUERY == true
+      face_passed = face_passed && occlusion_passed;
+    #endif
 
-      glGenQueries(1, &query);
-
-      glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-      glDepthMask(GL_FALSE);
-
-      glBeginQuery(GL_ANY_SAMPLES_PASSED, query);
-
-      glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
-
-      glEndQuery(GL_ANY_SAMPLES_PASSED);
-
-      glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-      glDepthMask(GL_TRUE);
-
-      glGetQueryObjectiv(query, GL_QUERY_RESULT, &face_passed);
+    #if FRUSTUM_CULLING == true
+      face_passed = face_passed && passed_frustum;
+    #endif
     }
-    else if (!freecam_active)
+    else if(!freecam_active)
     {
-      face_passed = 1;
-      passed = false;
+        first_freecam_pass = true;
+        face_passed = true;
     }
 
-    if (face_passed != 0)
+    if (face_passed)
     {
       glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
     }
+
   #else
     glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
   #endif
@@ -327,16 +338,18 @@ protected:
 
 private:
 
-
   glm::vec3 m_color = { 0.f,1.f,0.f };
 
-#if OCCLUSION_CULL_QUERY == true
-  GLuint occ_query;
-  int passed = 0;
+  bool first_freecam_pass = true;
+
+  bool face_passed = true;
+
+#if OCCLUSION_CULL_QUERY
+  bool occlusion_passed = false;
 #endif
 
 #if FRUSTUM_CULLING == true
-  bool passed_frustum;
+  bool passed_frustum = true;
 #endif
 
   int layer = 0;

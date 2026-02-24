@@ -50,6 +50,13 @@ public:
 #if FREECAM_ACTIVE == true
 		delete freecam_particle;
 #endif
+
+#if CLOSEST_POINTS == true
+		for (auto &part : particle_pool)
+		{
+			delete part;
+		}
+#endif
 	}
 
 	bool init();
@@ -114,11 +121,6 @@ private:
 
 	bool lineIntersectsQuad(Rect *quad, const glm::vec3 &line_start_pos, const glm::vec3& line_end_pos, glm::vec3& intersection_point);
 
-	inline float scalarTriple(const glm::vec3 &u, const glm::vec3 &v, const glm::vec3 &w) const
-	{
-		return glm::dot(glm::cross(u, v), w);
-	}
-
 	Rect* getSelectedFace();
 
 	bool shouldReplaceSelectedFace(Rect *current_face, Rect *face, const glm::vec3 &camera_pos, const glm::vec3 &line_end, const glm::vec3 &current_intersection_point, glm::vec3 &checking_intersection_point);
@@ -159,6 +161,10 @@ private:
 	WireFrame<Cube> test_frame;
 
 	Frustum view_frustum;
+
+#if CLOSEST_POINTS == true
+	std::vector<Particle<Rect> *> particle_pool;
+#endif
 
 #if FREECAM_ACTIVE == true
 	Particle<Rect>* freecam_particle = nullptr;
@@ -215,7 +221,7 @@ bool Simulation::init()
 	test_frame->initialise(projection, cube_shader.shaderPtr());
 	test_frame->setPosition({ 0,-8,2 });
 
-	view_frustum = Frustum(m_window.getCamera(), 1920.f / 1080.f, 90.f, 0.1f, 100.f);
+	view_frustum = Frustum(m_window.getCamera(), 1920.f / 1080.f, 45.f, 0.1f, 100.f);
 	view_frustum.initialise(projection, plane_shader.shaderPtr());
 
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
@@ -224,16 +230,35 @@ bool Simulation::init()
 	for (Rect *face : x_axis.getFaces())
 	{
 		faces[i] = std::move(face);
+
+#if CLOSEST_POINTS == true
+		particle_pool.emplace_back();
+		particle_pool.back() = new Particle<Rect>();
+		particle_pool.back()->initialise(projection, billboard_shader.shaderPtr());
+#endif
+
 		i++;
 	}
 	for (Rect *face : y_axis.getFaces())
 	{
 		faces[i] = std::move(face);
+#if CLOSEST_POINTS == true
+		particle_pool.emplace_back();
+		particle_pool.back() = new Particle<Rect>();
+		particle_pool.back()->initialise(projection, billboard_shader.shaderPtr());
+#endif
+
 		i++;
 	}
 	for (Rect *face : z_axis.getFaces())
 	{
 		faces[i] = std::move(face);
+#if CLOSEST_POINTS == true
+		particle_pool.emplace_back();
+		particle_pool.back() = new Particle<Rect>();
+		particle_pool.back()->initialise(projection, billboard_shader.shaderPtr());
+#endif
+
 		i++;
 	}
 #endif
@@ -341,6 +366,16 @@ void Simulation::update()
 	});
 #endif
 
+#if FACE_CHECKING == true
+	Rect *current_face = getSelectedFace();
+
+	if (current_face != nullptr)
+	{
+		current_face->setColor({ 1.f,0.f,0.f });
+	}
+
+#endif
+
 #if USE_IMGUI == true
 
 	time_passed += m_fps;
@@ -381,7 +416,6 @@ void Simulation::update()
 	ImGui::Text("Average FPS: %.f", average_fps);
 
 #if FACE_CHECKING == true
-	Rect *current_face = getSelectedFace();
 	if (ImGui::Button("Get Face Data")  && current_face != nullptr)
 	{
 		m_selected_position = current_face->getPosition();
@@ -391,15 +425,11 @@ void Simulation::update()
 	ImGui::Text("Position: [%.1f, %.1f, %.1f]", m_selected_position.x, m_selected_position.y, m_selected_position.z);
 	ImGui::Text("Center: [%.1f, %.1f, %.1f]", m_selected_center.x, m_selected_center.y, m_selected_center.z);
 	ImGui::Text("Scale: [%.1f, %.1f, %.1f]", m_selected_scale.x, m_selected_scale.y, m_selected_scale.z);
+
+	ImGui::SliderFloat("FovY", &view_frustum.getFovY(), 0.f, 180.f, "%.1f");
+
 #endif
 	ImGui::End();
-#endif
-
-#if FACE_CHECKING == true
-	if (current_face != nullptr)
-	{
-		current_face->setColor({ 1.f,0.f,0.f });
-	}
 #endif
 
 #if FRUSTUM_CULLING == true
@@ -409,11 +439,21 @@ void Simulation::update()
 	plane_shader.use();
 	plane_shader.setLightPosition(view_frustum.getCenter());
 
+
 #if COLLECT_FACES == true
+	int i = 0;
+	for (Rect *face : faces)
+	{
+		glm::vec3 point = face->testFrustum(view_frustum, m_window.getCamera());
+
+#if CLOSEST_POINTS == true
+		(*particle_pool[i++])->setPosition(point);
+#endif
+	}
 #else
-	x_axis.frustumCull(view_frustum);
-	y_axis.frustumCull(view_frustum);
-	z_axis.frustumCull(view_frustum);
+	x_axis.frustumCull(view_frustum, m_window.getCamera().Position);
+	y_axis.frustumCull(view_frustum, m_window.getCamera().Position);
+	z_axis.frustumCull(view_frustum, m_window.getCamera().Position);
 #endif
 
 #endif
@@ -421,6 +461,15 @@ void Simulation::update()
 
 void Simulation::render()
 {
+	if (freecam_particle != nullptr)
+	{
+		m_window.draw(*freecam_particle);
+	}
+
+#if FRUSTUM_CULLING == true
+	m_window.draw(view_frustum);
+#endif
+
 #if Z_BUFFER_PRE_PASS == true
 
 	// z-prepass
@@ -429,7 +478,25 @@ void Simulation::render()
 	glColorMask(0, 0, 0, 0);  // Disable color, it's useless, we only want depth.
 	glDepthMask(GL_TRUE);     // Ask z writing
 
-	drawFaces();
+#if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
+	for (Rect *face : faces)
+	{
+		m_window.draw(*face, GL_NONE);
+	}
+#else
+	for (Rect *face : x_axis.getFaces())
+	{
+		m_window.draw(*face, GL_NONE);
+	}
+	for (Rect *face : y_axis.getFaces())
+	{
+		m_window.draw(*face, GL_NONE);
+	}
+	for (Rect *face : z_axis.getFaces())
+	{
+		m_window.draw(*face, GL_NONE);
+	}
+#endif
 
 	// real render
 	//glEnable(GL_DEPTH_TEST);  // We still want depth test
@@ -451,14 +518,15 @@ void Simulation::render()
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 #endif
 
+#if CLOSEST_POINTS == true
+	for (auto &part : particle_pool)
+	{
+		m_window.draw(*part);
+	}
+#endif
+
 	m_window.draw(crosshair);
 	m_window.draw(test_frame);
-
-	if(freecam_particle != nullptr)
-	{
-		m_window.draw(*freecam_particle);
-	}
-	m_window.draw(view_frustum);
 }
 
 void Simulation::worldCreation()
@@ -522,10 +590,19 @@ inline void Simulation::axesSplitting()
 inline void Simulation::drawFaces()
 {
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
-	for (Rect *&face : faces)
+
+  #if Z_BUFFER_PRE_PASS == false
+	std::sort(faces.begin(), faces.end(), [this](Rect *a, Rect *b)
+	{
+		return glm::distance(a->getCenter(), m_window.getCamera().Position) < glm::distance(b->getCenter(), m_window.getCamera().Position);
+	});
+  #endif
+
+	for (Rect *face : faces)
 	{
 		m_window.draw(*face);
 	}
+
 #else
 	m_window.draw(x_axis);
 	m_window.draw(y_axis);
@@ -556,7 +633,7 @@ inline bool Simulation::lineIntersectsQuad(Rect *quad, const glm::vec3 &line_sta
 	{
 		float u = -glm::dot(pb, m);
 		if (u < 0.0f) return false;
-		float w = scalarTriple(pq,pb,pa);
+		float w = hf::scalarTriple(pq,pb,pa);
 		if (w < 0.0f) return false;
 
 		float denom = 1.0f / (u + v + w);
@@ -571,7 +648,7 @@ inline bool Simulation::lineIntersectsQuad(Rect *quad, const glm::vec3 &line_sta
 
 		float u = glm::dot(pd, m);
 		if (u < 0.0f) return false;
-		float w = scalarTriple(pq, pa, pd);
+		float w = hf::scalarTriple(pq, pa, pd);
 		if (w < 0.0f) return false;
 
 		v = -v;
