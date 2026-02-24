@@ -25,4 +25,9 @@ namespace hf
 			0.1f,
 			100.0f);
 	}
+
+	inline float scalarTriple(const glm::vec3 &u, const glm::vec3 &v, const glm::vec3 &w)
+	{
+		return glm::dot(glm::cross(u, v), w);
+	}
 }

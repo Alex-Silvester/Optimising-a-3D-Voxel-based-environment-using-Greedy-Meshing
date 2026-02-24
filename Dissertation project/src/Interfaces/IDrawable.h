@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <print>
+#include <concepts>
 
 #include "../Shader Types/CubeShader.h"
 #include "../Window/DrawWindow.h"
@@ -16,7 +17,8 @@ class IDrawable;
 template<class T>
 concept Drawable = requires(T t)
 {
-  dynamic_cast<IDrawable *>(&t);
+  true;
+  //dynamic_cast<IDrawable *>(&t);
 };
 
 class IDrawable
@@ -117,11 +119,6 @@ public:
     return global_vertices;
   }
 
-  virtual void setPosition(const glm::vec3& pos)
-  {
-    m_position = pos;
-  }
-
   void scale(glm::vec3 scale, glm::vec3 offset = {0,0,0})
   {
     m_scale *= scale;
@@ -150,6 +147,11 @@ public:
         }
       }
     }
+  }
+
+  virtual void setPosition(const glm::vec3& pos)
+  {
+    m_position = pos;
   }
 
   virtual const glm::vec3& getPosition() const

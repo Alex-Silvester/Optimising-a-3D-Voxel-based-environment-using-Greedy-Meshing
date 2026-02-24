@@ -44,11 +44,11 @@ public:
 	}
 
 #if FRUSTUM_CULLING == true
-	void frustumCull(const Frustum &frustum) const
+	void frustumCull(const Frustum &frustum, const glm::vec3 &point) const
 	{
 		for (Rect *face : faces)
 		{
-			face->testFrustum(frustum);
+			face->testFrustum(frustum, point);
 		}
 	}
 #endif

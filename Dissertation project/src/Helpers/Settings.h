@@ -28,6 +28,9 @@
 //turns on and off frustum culling
 #define FRUSTUM_CULLING true
 
+//show closest points
+#define CLOSEST_POINTS false;
+
 /*----------Simulation----------*/
 
 
