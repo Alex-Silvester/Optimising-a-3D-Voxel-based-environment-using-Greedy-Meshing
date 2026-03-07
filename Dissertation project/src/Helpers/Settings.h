@@ -31,6 +31,9 @@
 //show closest points
 #define CLOSEST_POINTS false;
 
+//Write the profiling to file
+#define WRITE_TO_FILE false
+
 /*----------Simulation----------*/
 
 
