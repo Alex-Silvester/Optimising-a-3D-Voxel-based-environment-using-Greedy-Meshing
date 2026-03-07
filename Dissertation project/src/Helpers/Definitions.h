@@ -1,0 +1,8 @@
+#pragma once
+
+#define SQRT_TWO 1.41421356237f
+
+//1/SQRT_TWO
+#define INV_SQRT_TWO 0.707106781187f
+
+#define PI 3.14159265358979f

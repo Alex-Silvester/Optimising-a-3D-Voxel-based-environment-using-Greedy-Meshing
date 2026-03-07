@@ -43,6 +43,16 @@ public:
 		return faces;
 	}
 
+#if FRUSTUM_CULLING == true
+	void frustumCull(const Frustum &frustum, const glm::vec3 &point) const
+	{
+		for (Rect *face : faces)
+		{
+			face->testFrustum(frustum, point);
+		}
+	}
+#endif
+
 private:
 
 	float axis_pos(const Rect* face, Axis_t axis = EMPTY) const
@@ -85,7 +95,7 @@ private:
 		}
 	}
 
-	void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window) override
+	void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window, unsigned int draw_mode = GL_TRIANGLES) override
 	{
 #if USE_INSTANCING == false
 		for (Rect* face : faces)

@@ -10,17 +10,61 @@ class DrawWindow : public WindowBase
 {
 public:
 
-  DrawWindow() = default;
-
-  void draw(IDrawable& drawable)
+  ~DrawWindow()
   {
-    glm::mat4 view = camera.GetViewMatrix();
-    drawable.draw(VAO, VBO, view, *this);
+    current_camera = nullptr;
+    delete current_camera;
   }
 
-  void draw(const std::vector<float>& vertices, Shader* shader)
+  DrawWindow(float size_x = SCREEN_WIDTH, float size_y = SCREEN_HEIGHT, const char *name = "")
   {
-    glm::mat4 view = camera.GetViewMatrix();
+    current_camera = &camera;
+
+    //assert((WindowBase::initialise(size_x, size_y, name)==true));
+    WindowBase::initialise(size_x, size_y, name);
+
+    // configure global opengl state
+    // -----------------------------
+    glEnable(GL_DEPTH_TEST);
+
+  #if CULL_FACES == true
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CW);
+  #endif
+
+    glEnable(GL_MULTISAMPLE);
+
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    //position(3 floats), colour(3 floats), normal(3 floats)
+
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+    // texture coord attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    // normal attribute
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+  }
+
+  void draw(IDrawable& drawable, unsigned int draw_mode = GL_TRIANGLES)
+  {
+    drawable.freecam_active = m_freecam_active;
+
+    glm::mat4 view = current_camera->GetViewMatrix();
+    drawable.draw(VAO, VBO, view, *this, draw_mode);
+  }
+
+  void draw(const std::vector<float>& vertices, Shader* shader, unsigned int draw_mode = GL_TRIANGLES)
+  {
+    glm::mat4 view = current_camera->GetViewMatrix();
 
     shader->use();
     shader->setMat4("view", view);
@@ -38,7 +82,7 @@ public:
     model = glm::translate(model, glm::vec3(0.f));
     shader->setMat4("model", model);
 
-    glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 9);
+    glDrawArrays(draw_mode, 0, vertices.size() / 9);
   }
 
   bool initialise(float size_x = SCREEN_WIDTH, float size_y = SCREEN_HEIGHT, const char *name = "") override
@@ -91,6 +135,10 @@ public:
     return m_paused;
   }
 
+  bool isWireFrame() const { return m_wire_frame; }
+
+  bool freeCamActive() const { return m_freecam_active; }
+
 private:
 
 	void mouseEvent(double xposIn, double yposIn)override
@@ -113,7 +161,7 @@ private:
 
     if(!m_paused)
     {
-      camera.ProcessMouseMovement(xoffset, yoffset);
+      current_camera->ProcessMouseMovement(xoffset, yoffset);
     }
 	}
 
@@ -135,10 +183,12 @@ private:
       if (polygonMode == GL_FILL)
       {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        m_wire_frame = true;
       }
       else if (polygonMode == GL_LINE)
       {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        m_wire_frame = false;
       }
     }
     if (glfwGetKey(m_window, GLFW_KEY_F5) == GLFW_RELEASE && f5_pressed)
@@ -168,42 +218,65 @@ private:
     //forward/backward movement
     if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS)
     {
-      camera.ProcessKeyboard(FORWARD, m_delta_time);
+      current_camera->ProcessKeyboard(FORWARD, m_delta_time);
     }
     if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS)
     {
-      camera.ProcessKeyboard(BACKWARD, m_delta_time);
+      current_camera->ProcessKeyboard(BACKWARD, m_delta_time);
     }
 
     //left/right movement
     if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS)
     {
-      camera.ProcessKeyboard(LEFT, m_delta_time);
+      current_camera->ProcessKeyboard(LEFT, m_delta_time);
     }
     if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS)
     {
-      camera.ProcessKeyboard(RIGHT, m_delta_time);
+      current_camera->ProcessKeyboard(RIGHT, m_delta_time);
     }
 
     //up/down movement
     if (glfwGetKey(m_window, GLFW_KEY_SPACE) == GLFW_PRESS)
     {
-      camera.ProcessKeyboard(UP, m_delta_time);
+      current_camera->ProcessKeyboard(UP, m_delta_time);
     }
     if (glfwGetKey(m_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
     {
-      camera.ProcessKeyboard(DOWN, m_delta_time);
+      current_camera->ProcessKeyboard(DOWN, m_delta_time);
     }
 
     //sprint
     if (glfwGetKey(m_window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
     {
-      camera.sprint_active = true;
+      current_camera->sprint_active = true;
     }
     if (glfwGetKey(m_window, GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE)
     {
-      camera.sprint_active = false;
+      current_camera->sprint_active = false;
     }
+
+#if FREECAM_ACTIVE == true
+    //toggle free-cam
+    if (glfwGetKey(m_window, GLFW_KEY_F) == GLFW_PRESS && !f_pressed)
+    {
+      f_pressed = true;
+      m_freecam_active = !m_freecam_active;
+
+      if (m_freecam_active)
+      {
+        free_cam = camera;
+        current_camera = &free_cam;
+      }
+      else
+      {
+        current_camera = &camera;
+      }
+    }
+    if (glfwGetKey(m_window, GLFW_KEY_F) == GLFW_RELEASE && f_pressed)
+    {
+      f_pressed = false;
+    }
+#endif
 
 #if TAB_CHANGES_CURSOR == true
     //cursor type
@@ -243,14 +316,22 @@ private:
 	float m_lastY = 0;
 	bool m_first_mouse = true;
 
-  bool  space_pressed = false;
+  bool space_pressed = false;
   bool tab_pressed = false;
   bool f5_pressed = false;
   bool enter_pressed = false;
+  bool f_pressed = false;
 
 	Camera camera{ glm::vec3(-5.f, 0.f, -5.f) , {0.f,1.f,0.f}, 90.f, 0.f };
+  Camera free_cam;
+
+  Camera *current_camera = nullptr;
 
   unsigned int VAO = 0, VBO = 0;
 
   bool m_paused = false;
+
+  bool m_wire_frame = false;
+
+  bool m_freecam_active = false;
 };

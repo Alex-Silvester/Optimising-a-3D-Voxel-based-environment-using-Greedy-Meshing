@@ -14,16 +14,25 @@
 #define USE_IMGUI true
 
 //show and get data from selected faces
-#define FACE_CHECKING true;
+#define FACE_CHECKING false;
 
 //Generating the environment
 #define USE_NOISE true
 
 //Take faces from the axis objects and put them into one array
-#define COLLECT_FACES false
+#define COLLECT_FACES true
 
 //Does a pre-pass on the z-buffer to fill it out before rendering all of the geometry fully
-#define Z_BUFFER_PRE_PASS false
+#define Z_BUFFER_PRE_PASS true
+
+//turns on and off frustum culling
+#define FRUSTUM_CULLING true
+
+//show closest points
+#define CLOSEST_POINTS false;
+
+//Write the profiling to file
+#define WRITE_TO_FILE false
 
 /*----------Simulation----------*/
 
@@ -58,15 +67,19 @@
 //defines whether using the tab key activates/deactivates the cursor visibility
 #define TAB_CHANGES_CURSOR false
 
+//whether there is the ability to use the freecam
+#define FREECAM_ACTIVE false
+
 /*----------DrawWindow----------*/
 
 /*----------WindowBase----------*/
 
 //whether the window whould have the bar on the top or not
-#define DECORATE_WINDOW true
+#define DECORATE_WINDOW false
 
 /*----------WindowBase----------*/
 
 
 
 #endif // !SETTINGS
+

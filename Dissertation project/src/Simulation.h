@@ -12,6 +12,7 @@
 #include "Noise/PerlinNoise.h"
 
 #include "Helpers/Settings.h"
+#include "Helpers/HelperFunctions.h"
 
 #include <cmath>
 #include <cstdio>
@@ -22,11 +23,18 @@
 #include <ratio>
 #include <string>
 #include <vector>
+#include <fstream>
 
 #include "Shader Types/CubeShader.h"
 #include "Shader Types/HUDShader.h"
+#include "Shader Types/BillboardShader.h"
+#include "Shader Types/PlaneShader.h"
+
 #include "shapes/Cube.h"
 #include "shapes/Rect.h"
+#include "shapes/WireFrame.h"
+#include "shapes/Particle.h"
+#include "shapes/Frustum.h"
 
 #include "imgui-1.92.5/imgui.h"
 #include "imgui-1.92.5/backends/imgui_impl_glfw.h"
@@ -36,9 +44,20 @@ class Simulation
 {
 public:
 
-	Simulation()
-	{
+	Simulation() = default;
 
+	~Simulation()
+	{
+#if FREECAM_ACTIVE == true
+		delete freecam_particle;
+#endif
+
+#if CLOSEST_POINTS == true
+		for (auto &part : particle_pool)
+		{
+			delete part;
+		}
+#endif
 	}
 
 	bool init();
@@ -94,33 +113,30 @@ private:
 
 	inline void axesSplitting();
 
-	float magnitudeSqaured(const glm::vec3 &vector)
+	float magnitudeSquared(const glm::vec3 &vector)
 	{
 		return vector.x * vector.x + vector.y * vector.y + vector.z * vector.z;
 	}
 
 	void drawFaces();
 
-	Rect *getFaceData();
-
 	bool lineIntersectsQuad(Rect *quad, const glm::vec3 &line_start_pos, const glm::vec3& line_end_pos, glm::vec3& intersection_point);
 
-	inline float scalarTriple(const glm::vec3 &u, const glm::vec3 &v, const glm::vec3 &w) const
-	{
-		return glm::dot(glm::cross(u, v), w);
-	}
+	Rect* getSelectedFace();
 
-	Rect *getSelectedFace();
+	bool shouldReplaceSelectedFace(Rect *current_face, Rect *face, const glm::vec3 &camera_pos, const glm::vec3 &line_end, const glm::vec3 &current_intersection_point, glm::vec3 &checking_intersection_point);
 
 private:
 
-	DrawWindow m_window;
+	DrawWindow m_window{ 1920, 1080, "window" };
 
-	static constexpr glm::vec<3, int> m_world_size = {20, 20, 20};
+	static constexpr glm::vec<3, int> m_world_size = {50, 20, 50};
 	std::vector<Cube> cubes;
 
-	CubeShader cube_shader;
-	HUDShader hud_shader;
+	CubeShader cube_shader = CubeShader();
+	HUDShader hud_shader = HUDShader();
+	BillboardShader billboard_shader = BillboardShader();
+	PlaneShader plane_shader = PlaneShader();
 
 	Axis x_axis = Axis(Axis_t::X, m_world_size.x, m_world_size.y * m_world_size.z);
 	Axis y_axis = Axis(Axis_t::Y, m_world_size.y, m_world_size.z * m_world_size.x);
@@ -141,39 +157,81 @@ private:
 	double time_passed = 0;
 	double sample_timer = 0;
 
+	Rect crosshair;
+
+	Frustum view_frustum;
+
+#if CLOSEST_POINTS == true
+	std::vector<Particle<Rect> *> particle_pool;
+#endif
+
+#if FREECAM_ACTIVE == true
+	Particle<Rect>* freecam_particle = nullptr;
+#endif
+
 #if FACE_CHECKING == true
 	glm::vec3 m_selected_position = {0,0,0};
 	glm::vec3 m_selected_scale = { 0,0,0 };
 	glm::vec3 m_selected_center = { 0,0,0 };
 #endif
 
-	Rect crosshair;
 
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
 	std::vector<Rect *> faces = {};
+#endif
+
+	Timer<std::nano> m_timer;
+
+	float frustum_cull_time = 0.f;
+	float z_buffer_prepass_time = 0.f;
+
+#if WRITE_TO_FILE == true
+	using OpenFile = std::ofstream;
+	OpenFile spf_file{"spf_file.txt"};
+	OpenFile fc_file {"fc_file.txt" };
+	OpenFile zb_file {"zb_file.txt" };
+	OpenFile gm_file {"gm_file.txt" };
 #endif
 };
 
 bool Simulation::init()
 {
-	//initialise the window
-	m_window.initialise(1080, 720, "window");
+	projection = hf::getProjection(m_window.getWindow(), m_window.getCamera());
 
-	int size_x;
-	int size_y;
+	//shader setup
+	cube_shader.use();
 
-	glfwGetWindowSize(m_window.getWindow(), &size_x, &size_y);
+	cube_shader.setLightPosition(m_world_size.x / 2.f, m_world_size.y, m_world_size.z / 2.f)
+		.setLightIntensity(1.f)
+		.setLightColor(1.0f, 1.0f, 1.0f)
+		.setAmbientLightStrength(0.5f)
+		.setWorldSize(m_world_size)
+		.setObjectColor(0.f, 1.f, 0.f)
+		.setProjection(projection);
 
-	projection = glm::perspective(
-		glm::radians(m_window.getCamera().Zoom),
-		(float)size_x / (float)size_y,
-		0.1f,
-		100.0f);
+	hud_shader.use();
+	hud_shader.setProjection(projection);
 
+	billboard_shader.use();
+	billboard_shader.setProjection(projection);
+
+	plane_shader.use();
+	plane_shader.setProjection(projection)
+		.setLightIntensity(0.5f)
+		.setAmbientIntensity(0.3f);
+
+	//world setup
+	crosshair.initialise(projection, hud_shader.shaderPtr());
+	crosshair.setColor({ 1,1,1 });
+	crosshair.setFacing(Axis_t::Z);
+	crosshair.scale({ 10.f / 1080.f, 10.f / 720.f, 1.f });
 
 	worldCreation();
 
 	axesSplitting();
+
+	view_frustum = Frustum(m_window.getCamera(), 1920.f / 1080.f, 45.f, 0.1f, 100.f);
+	view_frustum.initialise(projection, plane_shader.shaderPtr());
 
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
 	faces.resize(x_axis.getFaces().size() + y_axis.getFaces().size() + z_axis.getFaces().size());
@@ -181,31 +239,40 @@ bool Simulation::init()
 	for (Rect *face : x_axis.getFaces())
 	{
 		faces[i] = std::move(face);
+
+#if CLOSEST_POINTS == true
+		particle_pool.emplace_back();
+		particle_pool.back() = new Particle<Rect>();
+		particle_pool.back()->initialise(projection, billboard_shader.shaderPtr());
+#endif
+
 		i++;
 	}
 	for (Rect *face : y_axis.getFaces())
 	{
 		faces[i] = std::move(face);
+#if CLOSEST_POINTS == true
+		particle_pool.emplace_back();
+		particle_pool.back() = new Particle<Rect>();
+		particle_pool.back()->initialise(projection, billboard_shader.shaderPtr());
+#endif
+
 		i++;
 	}
 	for (Rect *face : z_axis.getFaces())
 	{
 		faces[i] = std::move(face);
+#if CLOSEST_POINTS == true
+		particle_pool.emplace_back();
+		particle_pool.back() = new Particle<Rect>();
+		particle_pool.back()->initialise(projection, billboard_shader.shaderPtr());
+#endif
+
 		i++;
 	}
 #endif
 
-	cube_shader.setLightPosition(m_world_size.x / 2.f, m_world_size.y, m_world_size.z / 2.f);
-	cube_shader.setAmbientLightStrength(0.5f);
-	cube_shader.setLightIntensity(1.f);
-	cube_shader.setWorldSize(m_world_size);
-
-	hud_shader.init();
-	crosshair.initialise(projection, hud_shader.shaderPtr());
-	crosshair.setColor({ 1,1,1 });
-	crosshair.setFacing(Axis_t::Z);
-	crosshair.scale({ 10.f / 1080.f, 10.f / 720.f, 1.f });
-
+	//Disable cursor when the environment is running
 	glfwSetInputMode(m_window.getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	return true;
@@ -267,8 +334,19 @@ void Simulation::run()
 
 		//Getting the number of nanoseconds that have passed
 		m_fps = timer.End();
+
+	#if WRITE_TO_FILE == true
+		spf_file << m_fps;
+	#endif
 	}
 	m_window_open = false;
+
+#if WRITE_TO_FILE == true
+	spf_file.close();
+	fc_file.close();
+	zb_file.close();
+	gm_file.close();
+#endif
 
 #if USE_IMGUI == false
 	fps_thread.join();
@@ -283,13 +361,73 @@ void Simulation::run()
 void Simulation::update()
 {
 
+	const glm::vec3 position = m_window.getCamera().Position;
+#if FREECAM_ACTIVE == true
+
+	if (m_window.freeCamActive() && freecam_particle == nullptr)
+	{
+		freecam_particle = new Particle<Rect>(projection, billboard_shader.shaderPtr());
+		(*freecam_particle)->setPosition(position);
+	}
+	else if(!m_window.freeCamActive() && freecam_particle != nullptr)
+	{
+		delete freecam_particle;
+		freecam_particle = nullptr;
+	}
+
+#endif
+
 #if OCCLUSION_CULL_QUERY == true
 	std::sort(faces.begin(), faces.end(), [this](Rect *face1, Rect *face2)
 	{
 		return
-			magnitudeSqaured(face1->getPosition() - m_window.getCamera().Position) <
-			magnitudeSqaured(face2->getPosition() - m_window.getCamera().Position);
+			magnitudeSquared(face1->getPosition() - m_window.getCamera().Position) <
+			magnitudeSquared(face2->getPosition() - m_window.getCamera().Position);
 	});
+#endif
+
+#if FACE_CHECKING == true
+	Rect *current_face = getSelectedFace();
+
+	if (current_face != nullptr)
+	{
+		current_face->setColor({ 1.f,0.f,0.f });
+	}
+
+#endif
+
+#if FRUSTUM_CULLING == true
+
+	m_timer.Start();
+
+	view_frustum.updateFaces();
+
+	plane_shader.use();
+	plane_shader.setLightPosition(view_frustum.getCenter());
+
+
+#if COLLECT_FACES == true
+	int i = 0;
+	for (Rect *face : faces)
+	{
+		glm::vec3 point = face->testFrustum(view_frustum, m_window.getCamera());
+
+	#if CLOSEST_POINTS == true
+		(*particle_pool[i++])->setPosition(point);
+	#endif
+	}
+#else
+	x_axis.frustumCull(view_frustum, m_window.getCamera().Position);
+	y_axis.frustumCull(view_frustum, m_window.getCamera().Position);
+	z_axis.frustumCull(view_frustum, m_window.getCamera().Position);
+#endif
+
+	frustum_cull_time = m_timer.End();
+
+#if WRITE_TO_FILE
+	fc_file << frustum_cull_time;
+#endif
+
 #endif
 
 #if USE_IMGUI == true
@@ -326,11 +464,14 @@ void Simulation::update()
 	ImGui::Text("Creation time: %.3f", m_world_creation_time);
 	ImGui::Text("Axis optimisation time: %.3f", m_axes_split_time);
 
+	ImGui::Text("Camera Position: [%.f %.f %.f]", position.x, position.y, position.z);
+
 	ImGui::Text("FPS: %.f", 1.f / m_fps);
 	ImGui::Text("Average FPS: %.f", average_fps);
+	ImGui::Text("Frustum Cull: %.5f", frustum_cull_time);
+	ImGui::Text("Z-Buffer pre-pass: %.5f", z_buffer_prepass_time);
 
 #if FACE_CHECKING == true
-	Rect *current_face = getSelectedFace();
 	if (ImGui::Button("Get Face Data")  && current_face != nullptr)
 	{
 		m_selected_position = current_face->getPosition();
@@ -340,21 +481,31 @@ void Simulation::update()
 	ImGui::Text("Position: [%.1f, %.1f, %.1f]", m_selected_position.x, m_selected_position.y, m_selected_position.z);
 	ImGui::Text("Center: [%.1f, %.1f, %.1f]", m_selected_center.x, m_selected_center.y, m_selected_center.z);
 	ImGui::Text("Scale: [%.1f, %.1f, %.1f]", m_selected_scale.x, m_selected_scale.y, m_selected_scale.z);
+
+	ImGui::SliderFloat("FovY", &view_frustum.getFovY(), 0.f, 180.f, "%.1f");
+
 #endif
 	ImGui::End();
 #endif
 
-#if FACE_CHECKING == true
-	if (current_face != nullptr)
-	{
-		current_face->setColor({ 1.f,0.f,0.f });
-	}
-#endif
 }
 
 void Simulation::render()
 {
+#if FREECAM_ACTIVE == true
+	if (freecam_particle != nullptr)
+	{
+		m_window.draw(*freecam_particle);
+	}
+#endif
+
+#if FRUSTUM_CULLING == true
+	m_window.draw(view_frustum);
+#endif
+
 #if Z_BUFFER_PRE_PASS == true
+
+	m_timer.Start();
 
 	// z-prepass
 	//glEnable(GL_DEPTH_TEST);  // We want depth test !
@@ -362,7 +513,31 @@ void Simulation::render()
 	glColorMask(0, 0, 0, 0);  // Disable color, it's useless, we only want depth.
 	glDepthMask(GL_TRUE);     // Ask z writing
 
-	drawFaces();
+#if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
+	for (Rect *face : faces)
+	{
+		m_window.draw(*face, GL_NONE);
+	}
+#else
+	for (Rect *face : x_axis.getFaces())
+	{
+		m_window.draw(*face, GL_NONE);
+	}
+	for (Rect *face : y_axis.getFaces())
+	{
+		m_window.draw(*face, GL_NONE);
+	}
+	for (Rect *face : z_axis.getFaces())
+	{
+		m_window.draw(*face, GL_NONE);
+	}
+#endif
+
+	z_buffer_prepass_time = m_timer.End();
+
+#if WRITE_TO_FILE == true
+	zb_file << z_buffer_prepass_time;
+#endif
 
 	// real render
 	//glEnable(GL_DEPTH_TEST);  // We still want depth test
@@ -384,23 +559,29 @@ void Simulation::render()
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 #endif
 
+#if CLOSEST_POINTS == true
+	for (auto &part : particle_pool)
+	{
+		m_window.draw(*part);
+	}
+#endif
+
 	m_window.draw(crosshair);
 }
 
 void Simulation::worldCreation()
 {
+#if USE_NOISE
 	Noise::PerlinNoise& noise_gen = Noise::PerlinNoise::noise();
+#endif
 
 	//timing the world creation
-	Timer<std::nano> timer;
-	timer.Start();
-
-	cube_shader.init();
+	m_timer.Start();
 
 	//initialising the world
 	for (int i = 0; i < m_world_size.x * m_world_size.y * m_world_size.z; i++)
 	{
-		glm::vec3 pos = glm::vec3{ i / (m_world_size.y * m_world_size.z),(i / m_world_size.z) % m_world_size.y,i % m_world_size.z };
+		glm::vec3 pos = hf::_1Dto3D(i, m_world_size);
 
 #if USE_NOISE
 		float noise_eval = noise_gen.eval({ pos.x / m_world_size.x, pos.y / m_world_size.y, pos.z / m_world_size.z });
@@ -412,7 +593,7 @@ void Simulation::worldCreation()
 		cubes.emplace_back(projection, pos, cube_shader.shaderPtr());
 	}
 
-	m_world_creation_time = timer.End();
+	m_world_creation_time = m_timer.End();
 
 #if USE_IMGUI == false
 	//ending the world creation time
@@ -423,10 +604,8 @@ void Simulation::worldCreation()
 
 inline void Simulation::axesSplitting()
 {
-	Timer<std::nano> timer;
-
 	//timing the initialisation of the axes
-	timer.Start();
+	m_timer.Start();
 
 	std::thread x_thread([this] { x_axis.addFaces(cubes, mtx); });
 	std::thread y_thread([this] { y_axis.addFaces(cubes, mtx); });
@@ -436,7 +615,11 @@ inline void Simulation::axesSplitting()
 	y_thread.join();
 	z_thread.join();
 
-	m_axes_split_time = timer.End();
+	m_axes_split_time = m_timer.End();
+
+#if WRITE_TO_FILE == true
+	gm_file << m_axes_split_time;
+#endif
 
 #if USE_IMGUI == false
 	printf("Axes splitting time: ");
@@ -448,24 +631,24 @@ inline void Simulation::axesSplitting()
 inline void Simulation::drawFaces()
 {
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
-	for (Rect *&face : faces)
+
+  #if Z_BUFFER_PRE_PASS == false
+	std::sort(faces.begin(), faces.end(), [this](Rect *a, Rect *b)
+	{
+		return glm::distance(a->getCenter(), m_window.getCamera().Position) < glm::distance(b->getCenter(), m_window.getCamera().Position);
+	});
+  #endif
+
+	for (Rect *face : faces)
 	{
 		m_window.draw(*face);
 	}
+
 #else
 	m_window.draw(x_axis);
 	m_window.draw(y_axis);
 	m_window.draw(z_axis);
 #endif
-}
-
-inline Rect *Simulation::getFaceData()
-{
-	float dist = 100.f;
-
-
-
-	return nullptr;
 }
 
 inline bool Simulation::lineIntersectsQuad(Rect *quad, const glm::vec3 &line_start_pos, const glm::vec3 &line_end_pos, glm::vec3& intersection_point)
@@ -491,7 +674,7 @@ inline bool Simulation::lineIntersectsQuad(Rect *quad, const glm::vec3 &line_sta
 	{
 		float u = -glm::dot(pb, m);
 		if (u < 0.0f) return false;
-		float w = scalarTriple(pq,pb,pa);
+		float w = hf::scalarTriple(pq,pb,pa);
 		if (w < 0.0f) return false;
 
 		float denom = 1.0f / (u + v + w);
@@ -506,7 +689,7 @@ inline bool Simulation::lineIntersectsQuad(Rect *quad, const glm::vec3 &line_sta
 
 		float u = glm::dot(pd, m);
 		if (u < 0.0f) return false;
-		float w = scalarTriple(pq, pa, pd);
+		float w = hf::scalarTriple(pq, pa, pd);
 		if (w < 0.0f) return false;
 
 		v = -v;
@@ -531,26 +714,13 @@ inline Rect *Simulation::getSelectedFace()
 	glm::vec3 current_intersection_point = {INFINITE, INFINITE, INFINITE};
 	glm::vec3 checking_intersection_point;
 
+
 	for (Rect *face : x_axis.getFaces())
 	{
 		face->setColor({ 0.f,1.f,0.f });
 
-		if (lineIntersectsQuad(face, camera_pos, line_end, checking_intersection_point))
+		if (shouldReplaceSelectedFace(current_face, face, camera_pos, line_end, current_intersection_point, checking_intersection_point))
 		{
-			if (current_face == nullptr)
-			{
-				current_face = face;
-				current_intersection_point = checking_intersection_point;
-				continue;
-			}
-
-			//if the distance to the new face is further than the current, then check the next face
-			if (glm::distance(camera_pos, current_intersection_point) <
-					glm::distance(camera_pos, checking_intersection_point))
-			{
-				continue;
-			}
-
 			current_face = face;
 			current_intersection_point = checking_intersection_point;
 		}
@@ -560,22 +730,8 @@ inline Rect *Simulation::getSelectedFace()
 	{
 		face->setColor({ 0.f,1.f,0.f });
 
-		if (lineIntersectsQuad(face, camera_pos, line_end, checking_intersection_point))
+		if (shouldReplaceSelectedFace(current_face, face, camera_pos, line_end, current_intersection_point, checking_intersection_point))
 		{
-			if (current_face == nullptr)
-			{
-				current_face = face;
-				current_intersection_point = checking_intersection_point;
-				continue;
-			}
-
-			//if the distance to the new face is further than the current, then check the next face
-			if ( glm::distance(camera_pos, current_intersection_point) <
-					glm::distance(camera_pos, checking_intersection_point))
-			{
-				continue;
-			}
-
 			current_face = face;
 			current_intersection_point = checking_intersection_point;
 		}
@@ -585,26 +741,39 @@ inline Rect *Simulation::getSelectedFace()
 	{
 		face->setColor({ 0.f,1.f,0.f });
 
-		if (lineIntersectsQuad(face, camera_pos, line_end, checking_intersection_point))
+		if (shouldReplaceSelectedFace(current_face, face, camera_pos, line_end, current_intersection_point, checking_intersection_point))
 		{
-			if (current_face == nullptr)
-			{
-				current_face = face;
-				current_intersection_point = checking_intersection_point;
-				continue;
-			}
-
-			//if the distance to the new face is further than the current, then check the next face
-			if (glm::distance(camera_pos, current_intersection_point) <
-					glm::distance(camera_pos, checking_intersection_point))
-			{
-				continue;
-			}
-
 			current_face = face;
 			current_intersection_point = checking_intersection_point;
 		}
 	}
 
 	return current_face;
+}
+
+inline bool Simulation::shouldReplaceSelectedFace(
+	Rect* current_face, Rect *face,
+	const glm::vec3 &camera_pos,
+	const glm::vec3 &line_end,
+	const glm::vec3 &current_intersection_point, 
+	glm::vec3 &checking_intersection_point)
+{
+	if (!lineIntersectsQuad(face, camera_pos, line_end, checking_intersection_point))
+	{
+		return false;
+	}
+
+	if (current_face == nullptr)
+	{
+		return true;
+	}
+
+	//if the distance to the new face is further than the current, then check the next face
+	if (glm::distance(camera_pos, current_intersection_point) <
+			glm::distance(camera_pos, checking_intersection_point))
+	{
+		return false;
+	}
+
+	return true;
 }

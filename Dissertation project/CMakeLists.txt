@@ -63,7 +63,7 @@ add_executable (${PROJECT_NAME} "main.cpp"
 "src/imgui-1.92.5/misc/cpp/imgui_stdlib.cpp"
 "src/imgui-1.92.5/misc/cpp/imgui_stdlib.h"
 "src/imgui-1.92.5/misc/fonts/binary_to_compressed_c.cpp"
-"src/imgui-1.92.5/misc/single_file/imgui_single_file.h" "src/Shader Types/HUDShader.h")
+"src/imgui-1.92.5/misc/single_file/imgui_single_file.h" "src/Shader Types/HUDShader.h" "src/Helpers/HelperFunctions.h" "src/shapes/WireFrame.h" "src/shapes/Particle.h" "src/Shader Types/BillboardShader.h" "src/Helpers/Definitions.h"  "src/shapes/Frustum.h" "src/Shader Types/PlaneShader.h")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
@@ -75,6 +75,7 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/Data/ DESTINATION ${CMAKE_CURRENT_BINARY_D
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
 	set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
+	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 	message("-- Using C++23 --")
 endif()
 

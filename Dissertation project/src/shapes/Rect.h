@@ -1,9 +1,14 @@
 #pragma once
 
 #include "../Interfaces/IDrawable.h"
+
 #include <cmath>
 #include <glm/fwd.hpp>
+
 #include "../Shader Types/shader.h"
+#include "../Helpers/HelperFunctions.h"
+
+#include "Frustum.h"
 
 enum Axis_t
 {
@@ -73,8 +78,7 @@ public:
 		//1.0 parts wide
 		setVertices(default_square, default_sqaure_vals);
 
-		setShader(shader,
-			projection);
+		setShader(shader, projection);
 
 		update_corner_positions = true;
 	}
@@ -249,22 +253,130 @@ public:
 	{
 		if (update_corner_positions)
 		{
-			corner_positions = std::array<glm::vec3, 4>
-			{
-				glm::vec3(m_vertices[0], m_vertices[1], m_vertices[2]) + m_position,
-				glm::vec3(m_vertices[9], m_vertices[10], m_vertices[11]) + m_position,
-				glm::vec3(m_vertices[18], m_vertices[19], m_vertices[20]) + m_position,
-				glm::vec3(m_vertices[36], m_vertices[37], m_vertices[38]) + m_position,
-			};
+			updateCorners();
 		}
 
 		return corner_positions;
+	}
+
+	void updateCorners()
+	{
+		corner_positions = std::array<glm::vec3, 4>
+		{
+			glm::vec3(m_vertices[0], m_vertices[1], m_vertices[2]) + m_position,
+			glm::vec3(m_vertices[9], m_vertices[10], m_vertices[11]) + m_position,
+			glm::vec3(m_vertices[18], m_vertices[19], m_vertices[20]) + m_position,
+			glm::vec3(m_vertices[36], m_vertices[37], m_vertices[38]) + m_position,
+		};
 	}
 
 	glm::vec3 getCenter()
 	{
 		return m_position + m_scale / 2.f;
 	}
+
+#if FRUSTUM_CULLING == true
+	glm::vec3 testFrustum(const Frustum &frustum, const Camera &cam)
+	{
+		setFrustumPass(false);
+		glm::vec3 closest_point = closestPoint(cam.Position);
+
+		if (inFront(cam.Position, cam.Front, 100.f))
+		{
+			setFrustumPass(true);
+			return closest_point;
+		}
+
+		if (frustum.inFrustum(closest_point))
+		{
+			setFrustumPass(true);
+			return closest_point;
+		}
+
+		for (const glm::vec3 &point : getCorners())
+		{
+			if (frustum.inFrustum(point))
+			{
+				setFrustumPass(true);
+				return closest_point;
+			}
+		}
+
+		return closest_point;
+	}
+
+	bool inFront(const glm::vec3 &point, const glm::vec3 &direction, float dist)
+	{
+		const glm::vec3 &q = point;
+		const glm::vec3 &p = point + direction * dist;
+
+		std::array<glm::vec3, 4> corners = getCorners();
+		const glm::vec3 &a = corners[0];
+		const glm::vec3 &b = corners[1];
+		const glm::vec3 &c = corners[2];
+		const glm::vec3 &d = corners[3];
+
+
+		glm::vec3 pq = q - p;
+		glm::vec3 pa = a - p;
+		glm::vec3 pb = b - p;
+		glm::vec3 pc = c - p;
+
+		glm::vec3 m = glm::cross(pc, pq);
+		float v = glm::dot(pa, m);
+		if (v >= 0.0f)
+		{
+			float u = -glm::dot(pb, m);
+			if (u < 0.0f) return false;
+			float w = hf::scalarTriple(pq, pb, pa);
+			if (w < 0.0f) return false;
+		}
+		else
+		{
+			glm::vec3 pd = d - p;
+
+			float u = glm::dot(pd, m);
+			if (u < 0.0f) return false;
+			float w = hf::scalarTriple(pq, pa, pd);
+			if (w < 0.0f) return false;
+		}
+
+		return true;
+	}
+
+	glm::vec3 closestPoint(const glm::vec3 &p)
+	{
+		updateCorners();
+
+		const glm::vec3 &a = corner_positions[0];
+		const glm::vec3 &b = corner_positions[1];
+		const glm::vec3 &c = corner_positions[3];
+
+		using Vector = glm::vec3;
+
+		Vector ab = b - a;
+		Vector ac = c - a;
+		Vector d = p - a;
+
+		Vector q = a;
+
+		float dist = glm::dot(d, ab);
+		float maxDist = glm::dot(ab, ab);
+		if (dist >= maxDist)
+			q += ab;
+		else if (dist > 0.0f)
+			q += (dist / maxDist) * ab;
+
+		dist = glm::dot(d, ac);
+		maxDist = glm::dot(ac, ac);
+		if (dist >= maxDist)
+			q += ac;
+		else if (dist > 0.0f)
+			q += (dist / maxDist) * ac;
+
+		return q;
+	}
+#endif
 
 private:
 	Axis_t m_current_axis = Axis_t::EMPTY;

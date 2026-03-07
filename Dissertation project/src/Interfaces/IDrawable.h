@@ -4,11 +4,22 @@
 
 #include <vector>
 #include <print>
+#include <concepts>
 
 #include "../Shader Types/CubeShader.h"
 #include "../Window/DrawWindow.h"
 
 #include "../Helpers/Settings.h"
+#include "../Helpers/Definitions.h"
+
+class IDrawable;
+
+template<class T>
+concept Drawable = requires(T t)
+{
+  true;
+  //dynamic_cast<IDrawable *>(&t);
+};
 
 class IDrawable
 {
@@ -23,13 +34,6 @@ public:
     m_shader->init(vertex_path, fragment_path);
 
     m_shader->use();
-    m_shader->setVec3("objectColor", 1.f,0.f,0.f);
-    m_shader->setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-    m_shader->setVec3("lightPos", glm::vec3(0,0,0));
-    m_shader->setInt("intensity", 1);
-
-    // pass projection matrix to shader (note that in this case it could change every frame)
-    m_shader->setMat4("projection", projection);
   }
 
   void setShader(Shader* shader, glm::mat4& projection)
@@ -37,13 +41,6 @@ public:
     m_shader = shader;
 
     m_shader->use();
-    m_shader->setVec3("objectColor", 1.0f, 1.0f, 1.0f);
-    m_shader->setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-    m_shader->setVec3("lightPos", glm::vec3(0, 0, 0));
-    m_shader->setInt("intensity", 1);
-
-    // pass projection matrix to shader (note that in this case it could change every frame)
-    m_shader->setMat4("projection", projection);
   }
 
   void setShader(Shader* shader)
@@ -51,10 +48,6 @@ public:
     m_shader = (Shader*)(shader);
 
     m_shader->use();
-    m_shader->setVec3("objectColor", 1.0f, 1.0f, 1.0f);
-    m_shader->setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-    m_shader->setVec3("lightPos", glm::vec3(0, 0, 0));
-    m_shader->setInt("intensity", 1);
   }
 
   void setProjection(glm::mat4 &projection)
@@ -70,6 +63,24 @@ public:
   void setVertices(const float* vertices, int vals)
   {
     this->m_vertices = std::vector<float>(vertices, vertices + vals);
+  }
+
+  void setVertices(const std::vector<std::tuple<glm::vec3, glm::vec3, glm::vec3>> &vertices)
+  {
+    std::vector<float> new_vertices;
+    for (auto& vert : vertices)
+    {
+        new_vertices.emplace_back(std::get<0>(vert).x);
+        new_vertices.emplace_back(std::get<0>(vert).y);
+        new_vertices.emplace_back(std::get<0>(vert).z);
+        new_vertices.emplace_back(std::get<1>(vert).x);
+        new_vertices.emplace_back(std::get<1>(vert).y);
+        new_vertices.emplace_back(std::get<1>(vert).z);
+        new_vertices.emplace_back(std::get<2>(vert).x);
+        new_vertices.emplace_back(std::get<2>(vert).y);
+        new_vertices.emplace_back(std::get<2>(vert).z);
+    }
+    setVertices(new_vertices);
   }
 
   Shader& getShader()
@@ -108,11 +119,6 @@ public:
     return global_vertices;
   }
 
-  virtual void setPosition(const glm::vec3& pos)
-  {
-    m_position = pos;
-  }
-
   void scale(glm::vec3 scale, glm::vec3 offset = {0,0,0})
   {
     m_scale *= scale;
@@ -141,6 +147,11 @@ public:
         }
       }
     }
+  }
+
+  virtual void setPosition(const glm::vec3& pos)
+  {
+    m_position = pos;
   }
 
   virtual const glm::vec3& getPosition() const
@@ -183,12 +194,30 @@ public:
     m_color = col;
   }
 
+  void setAlwaysRendered(bool _always_rendered)
+  {
+    always_rendered = _always_rendered;
+  }
+
+#if FRUSTUM_CULLING == true
+  void setFrustumPass(bool pass)
+  {
+    passed_frustum = pass;
+  }
+#endif
+
+  bool freecam_active = false;
+
 private:
 
   friend class DrawWindow;
 	
-	virtual void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window)
+	virtual void draw(unsigned int& VAO, unsigned int& VBO, glm::mat4& view, DrawWindow& window, unsigned int draw_mode = GL_TRIANGLES)
   {
+  #if FRUSTUM_CULLING == true
+    if (passed_frustum == false) return;
+  #endif
+
     m_shader->use();
     m_shader->setMat4("view", view);
     m_shader->setVec3("position", m_position);
@@ -207,38 +236,95 @@ private:
     model = glm::translate(model, glm::vec3(0.f));
     m_shader->setMat4("model", model);
 
-  #if OCCLUSION_CULL_QUERY == true
-    glGenQueries(1, &occ_query);
-
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    glDepthMask(GL_FALSE);
-
-    glBeginQuery(GL_ANY_SAMPLES_PASSED, occ_query);
-
-    glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
-
-    glEndQuery(GL_ANY_SAMPLES_PASSED);
-
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glDepthMask(GL_TRUE);
-
-    glGetQueryObjectiv(occ_query, GL_QUERY_RESULT, &passed);
-    
-
-    if (prev_passed)
+    //if the draw node is none, then draw with a default draw mode
+    if (draw_mode == GL_NONE)
     {
       glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
-      prev_passed = (passed != 0);
-    }
-    else
-    {
-      prev_passed = (passed != 0);
       return;
     }
+
+#if OCCLUSION_CULL_QUERY == true
+
+    int occ_passed;
+
+    if (!freecam_active)
+    {
+      GLuint occ_query;
+
+      glGenQueries(1, &occ_query);
+
+      glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+      glDepthMask(GL_FALSE);
+
+      glBeginQuery(GL_ANY_SAMPLES_PASSED, occ_query);
+
+      glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
+
+      glEndQuery(GL_ANY_SAMPLES_PASSED);
+
+      glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+      glDepthMask(GL_TRUE);
+
+      glGetQueryObjectiv(occ_query, GL_QUERY_RESULT, &occ_passed);
+
+      occlusion_passed = (occ_passed != 0);
+
+      if (occlusion_passed)
+      {
+        drawVertices(draw_mode);
+      }
+
+      occlusion_passed = (occ_passed != 0);
+    }
+    else if(occlusion_passed)
+    {
+      glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
+    }
+
   #else
-    glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 9);
+
+    drawVertices(draw_mode);
+
   #endif
 	}
+
+  void drawVertices(unsigned int draw_mode)
+  {
+  #if FREECAM_ACTIVE == true
+
+    if (always_rendered)
+    {
+      glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
+      return;
+    }
+
+    if (freecam_active && first_freecam_pass)
+    {
+      first_freecam_pass = false;
+
+    #if OCCLUSION_CULL_QUERY == true
+      face_passed = face_passed && occlusion_passed;
+    #endif
+
+    #if FRUSTUM_CULLING == true
+      face_passed = face_passed && passed_frustum;
+    #endif
+    }
+    else if(!freecam_active)
+    {
+        first_freecam_pass = true;
+        face_passed = true;
+    }
+
+    if (face_passed)
+    {
+      glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
+    }
+
+  #else
+    glDrawArrays(draw_mode, 0, m_vertices.size() / 9);
+  #endif
+  }
   
 protected:
 
@@ -246,17 +332,26 @@ protected:
   glm::vec3 m_scale = { 1.0f , 1.0f, 1.0f };
 	std::vector<float> m_vertices;
 
-private:
+  bool always_rendered = false;
 
   Shader* m_shader = nullptr;
 
+private:
+
   glm::vec3 m_color = { 0.f,1.f,0.f };
 
-#if OCCLUSION_CULL_QUERY == true
-  GLuint occ_query;
-  int passed = 0;
+  bool first_freecam_pass = true;
+
+  bool face_passed = true;
+
+#if OCCLUSION_CULL_QUERY
+  bool occlusion_passed = false;
 #endif
 
-  bool prev_passed = true;
+#if FRUSTUM_CULLING == true
+  bool passed_frustum = true;
+#endif
+
   int layer = 0;
+
 };
