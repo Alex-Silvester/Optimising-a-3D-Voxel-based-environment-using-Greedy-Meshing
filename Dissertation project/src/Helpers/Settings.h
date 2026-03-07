@@ -14,7 +14,7 @@
 #define USE_IMGUI true
 
 //show and get data from selected faces
-#define FACE_CHECKING true;
+#define FACE_CHECKING false;
 
 //Generating the environment
 #define USE_NOISE true
@@ -65,7 +65,7 @@
 #define TAB_CHANGES_CURSOR false
 
 //whether there is the ability to use the freecam
-#define FREECAM_ACTIVE true
+#define FREECAM_ACTIVE false
 
 /*----------DrawWindow----------*/
 

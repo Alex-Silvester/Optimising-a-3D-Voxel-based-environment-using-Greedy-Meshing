@@ -180,6 +180,11 @@ private:
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
 	std::vector<Rect *> faces = {};
 #endif
+
+	Timer<std::nano> m_timer;
+
+	float frustum_cull_time = 0.f;
+	float z_buffer_prepass_time = 0.f;
 };
 
 bool Simulation::init()
@@ -341,9 +346,9 @@ void Simulation::run()
 void Simulation::update()
 {
 
+	const glm::vec3 position = m_window.getCamera().Position;
 #if FREECAM_ACTIVE == true
 
-	const glm::vec3 position = m_window.getCamera().Position;
 	if (m_window.freeCamActive() && freecam_particle == nullptr)
 	{
 		freecam_particle = new Particle<Rect>(projection, billboard_shader.shaderPtr());
@@ -374,6 +379,35 @@ void Simulation::update()
 		current_face->setColor({ 1.f,0.f,0.f });
 	}
 
+#endif
+
+#if FRUSTUM_CULLING == true
+
+	m_timer.Start();
+
+	view_frustum.updateFaces();
+
+	plane_shader.use();
+	plane_shader.setLightPosition(view_frustum.getCenter());
+
+
+#if COLLECT_FACES == true
+	int i = 0;
+	for (Rect *face : faces)
+	{
+		glm::vec3 point = face->testFrustum(view_frustum, m_window.getCamera());
+
+	#if CLOSEST_POINTS == true
+		(*particle_pool[i++])->setPosition(point);
+	#endif
+	}
+#else
+	x_axis.frustumCull(view_frustum, m_window.getCamera().Position);
+	y_axis.frustumCull(view_frustum, m_window.getCamera().Position);
+	z_axis.frustumCull(view_frustum, m_window.getCamera().Position);
+#endif
+
+	frustum_cull_time = m_timer.End();
 #endif
 
 #if USE_IMGUI == true
@@ -414,6 +448,8 @@ void Simulation::update()
 
 	ImGui::Text("FPS: %.f", 1.f / m_fps);
 	ImGui::Text("Average FPS: %.f", average_fps);
+	ImGui::Text("Frustum Cull: %.5f", frustum_cull_time);
+	ImGui::Text("Z-Buffer pre-pass: %.5f", z_buffer_prepass_time);
 
 #if FACE_CHECKING == true
 	if (ImGui::Button("Get Face Data")  && current_face != nullptr)
@@ -432,45 +468,24 @@ void Simulation::update()
 	ImGui::End();
 #endif
 
-#if FRUSTUM_CULLING == true
-
-	view_frustum.updateFaces();
-
-	plane_shader.use();
-	plane_shader.setLightPosition(view_frustum.getCenter());
-
-
-#if COLLECT_FACES == true
-	int i = 0;
-	for (Rect *face : faces)
-	{
-		glm::vec3 point = face->testFrustum(view_frustum, m_window.getCamera());
-
-#if CLOSEST_POINTS == true
-		(*particle_pool[i++])->setPosition(point);
-#endif
-	}
-#else
-	x_axis.frustumCull(view_frustum, m_window.getCamera().Position);
-	y_axis.frustumCull(view_frustum, m_window.getCamera().Position);
-	z_axis.frustumCull(view_frustum, m_window.getCamera().Position);
-#endif
-
-#endif
 }
 
 void Simulation::render()
 {
+#if FREECAM_ACTIVE == true
 	if (freecam_particle != nullptr)
 	{
 		m_window.draw(*freecam_particle);
 	}
+#endif
 
 #if FRUSTUM_CULLING == true
 	m_window.draw(view_frustum);
 #endif
 
 #if Z_BUFFER_PRE_PASS == true
+
+	m_timer.Start();
 
 	// z-prepass
 	//glEnable(GL_DEPTH_TEST);  // We want depth test !
@@ -497,6 +512,8 @@ void Simulation::render()
 		m_window.draw(*face, GL_NONE);
 	}
 #endif
+
+	z_buffer_prepass_time = m_timer.End();
 
 	// real render
 	//glEnable(GL_DEPTH_TEST);  // We still want depth test
@@ -536,8 +553,7 @@ void Simulation::worldCreation()
 #endif
 
 	//timing the world creation
-	Timer<std::nano> timer;
-	timer.Start();
+	m_timer.Start();
 
 	//initialising the world
 	for (int i = 0; i < m_world_size.x * m_world_size.y * m_world_size.z; i++)
@@ -554,7 +570,7 @@ void Simulation::worldCreation()
 		cubes.emplace_back(projection, pos, cube_shader.shaderPtr());
 	}
 
-	m_world_creation_time = timer.End();
+	m_world_creation_time = m_timer.End();
 
 #if USE_IMGUI == false
 	//ending the world creation time
@@ -565,10 +581,8 @@ void Simulation::worldCreation()
 
 inline void Simulation::axesSplitting()
 {
-	Timer<std::nano> timer;
-
 	//timing the initialisation of the axes
-	timer.Start();
+	m_timer.Start();
 
 	std::thread x_thread([this] { x_axis.addFaces(cubes, mtx); });
 	std::thread y_thread([this] { y_axis.addFaces(cubes, mtx); });
@@ -578,7 +592,7 @@ inline void Simulation::axesSplitting()
 	y_thread.join();
 	z_thread.join();
 
-	m_axes_split_time = timer.End();
+	m_axes_split_time = m_timer.End();
 
 #if USE_IMGUI == false
 	printf("Axes splitting time: ");
