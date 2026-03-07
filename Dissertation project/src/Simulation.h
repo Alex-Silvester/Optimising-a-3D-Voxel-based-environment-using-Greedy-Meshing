@@ -23,6 +23,7 @@
 #include <ratio>
 #include <string>
 #include <vector>
+#include <fstream>
 
 #include "Shader Types/CubeShader.h"
 #include "Shader Types/HUDShader.h"
@@ -158,8 +159,6 @@ private:
 
 	Rect crosshair;
 
-	WireFrame<Cube> test_frame;
-
 	Frustum view_frustum;
 
 #if CLOSEST_POINTS == true
@@ -185,6 +184,14 @@ private:
 
 	float frustum_cull_time = 0.f;
 	float z_buffer_prepass_time = 0.f;
+
+#if WRITE_TO_FILE == true
+	using OpenFile = std::ofstream;
+	OpenFile spf_file{"spf_file.txt"};
+	OpenFile fc_file {"fc_file.txt" };
+	OpenFile zb_file {"zb_file.txt" };
+	OpenFile gm_file {"gm_file.txt" };
+#endif
 };
 
 bool Simulation::init()
@@ -222,9 +229,6 @@ bool Simulation::init()
 	worldCreation();
 
 	axesSplitting();
-
-	test_frame->initialise(projection, cube_shader.shaderPtr());
-	test_frame->setPosition({ 0,-8,2 });
 
 	view_frustum = Frustum(m_window.getCamera(), 1920.f / 1080.f, 45.f, 0.1f, 100.f);
 	view_frustum.initialise(projection, plane_shader.shaderPtr());
@@ -330,8 +334,19 @@ void Simulation::run()
 
 		//Getting the number of nanoseconds that have passed
 		m_fps = timer.End();
+
+	#if WRITE_TO_FILE == true
+		spf_file << m_fps;
+	#endif
 	}
 	m_window_open = false;
+
+#if WRITE_TO_FILE == true
+	spf_file.close();
+	fc_file.close();
+	zb_file.close();
+	gm_file.close();
+#endif
 
 #if USE_IMGUI == false
 	fps_thread.join();
@@ -408,6 +423,11 @@ void Simulation::update()
 #endif
 
 	frustum_cull_time = m_timer.End();
+
+#if WRITE_TO_FILE
+	fc_file << frustum_cull_time;
+#endif
+
 #endif
 
 #if USE_IMGUI == true
@@ -515,6 +535,10 @@ void Simulation::render()
 
 	z_buffer_prepass_time = m_timer.End();
 
+#if WRITE_TO_FILE == true
+	zb_file << z_buffer_prepass_time;
+#endif
+
 	// real render
 	//glEnable(GL_DEPTH_TEST);  // We still want depth test
 	glDepthFunc(GL_LEQUAL);   // EQUAL should work, too. (Only draw pixels if they are the closest ones)
@@ -543,7 +567,6 @@ void Simulation::render()
 #endif
 
 	m_window.draw(crosshair);
-	m_window.draw(test_frame);
 }
 
 void Simulation::worldCreation()
@@ -593,6 +616,10 @@ inline void Simulation::axesSplitting()
 	z_thread.join();
 
 	m_axes_split_time = m_timer.End();
+
+#if WRITE_TO_FILE == true
+	gm_file << m_axes_split_time;
+#endif
 
 #if USE_IMGUI == false
 	printf("Axes splitting time: ");
