@@ -34,6 +34,12 @@
 //Write the profiling to file
 #define WRITE_TO_FILE false
 
+//whether the window has a timeout
+#define TIMEOUT true
+
+//time the window will stay open for to get data
+#define TIMEOUT_TIME 10.f
+
 /*----------Simulation----------*/
 
 

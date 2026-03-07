@@ -14,23 +14,23 @@ public:
 		m_start_time = std::chrono::high_resolution_clock::now();
 	}
 
-	double End()
+	long double End()
 	{
 		m_end_time = std::chrono::high_resolution_clock::now();
 
-		time_t time = std::chrono::duration<time_t, Acc>(m_end_time - m_start_time).count();
+		Acc time = std::chrono::duration_cast<Acc>(m_end_time - m_start_time);
 
-		return (double)time / den;
+		return (long double)time.count() / den;
 	}
 
-	double time()
+	long double time()
 	{
-		time_t time = std::chrono::duration<time_t, Acc>(m_end_time - m_start_time).count();
+		Acc time = std::chrono::duration_cast<Acc>(m_end_time - m_start_time);
 
-		return (double)time / den;
+		return (long double)time.count() / den;
 	}
 
-	static const int den = Acc::den;
+	static const int den = Acc::period::den;
 
 private:
 
