@@ -270,39 +270,22 @@ public:
 		};
 	}
 
-	glm::vec3 getCenter()
-	{
-		return m_position + m_scale / 2.f;
-	}
-
 #if FRUSTUM_CULLING == true
-	glm::vec3 testFrustum(const Frustum &frustum, const Camera &cam)
+	void testFrustum(const Frustum &frustum)
 	{
+		updateCorners();
 		setFrustumPass(false);
-		glm::vec3 closest_point = closestPoint(cam.Position);
 
-		if (inFront(cam.Position, cam.Front, 100.f))
+		if (
+			isOnOrForwardPlane(frustum.getPlane(0)) &&
+			isOnOrForwardPlane(frustum.getPlane(1)) &&
+			isOnOrForwardPlane(frustum.getPlane(2)) &&
+			isOnOrForwardPlane(frustum.getPlane(3)) &&
+			isOnOrForwardPlane(frustum.getPlane(4)) &&
+			isOnOrForwardPlane(frustum.getPlane(5)))
 		{
 			setFrustumPass(true);
-			return closest_point;
 		}
-
-		if (frustum.inFrustum(closest_point))
-		{
-			setFrustumPass(true);
-			return closest_point;
-		}
-
-		for (const glm::vec3 &point : getCorners())
-		{
-			if (frustum.inFrustum(point))
-			{
-				setFrustumPass(true);
-				return closest_point;
-			}
-		}
-
-		return closest_point;
 	}
 
 	bool inFront(const glm::vec3 &point, const glm::vec3 &direction, float dist)
@@ -376,6 +359,22 @@ public:
 
 		return q;
 	}
+
+	bool isOnOrForwardPlane(const Plane &plane)
+	{
+		int in_front = 0;
+
+		for (glm::vec3 p : corner_positions)
+		{
+			if (glm::dot(plane.m_normal, p-plane.m_position) > 0)
+			{
+				in_front++;
+			}
+		}
+
+		return in_front > 0;
+	}
+
 #endif
 
 private:

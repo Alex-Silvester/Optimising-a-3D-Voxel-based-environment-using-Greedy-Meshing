@@ -48,7 +48,7 @@ public:
 	{
 		for (Rect *face : faces)
 		{
-			face->testFrustum(frustum, point);
+			face->testFrustum(frustum);
 		}
 	}
 #endif

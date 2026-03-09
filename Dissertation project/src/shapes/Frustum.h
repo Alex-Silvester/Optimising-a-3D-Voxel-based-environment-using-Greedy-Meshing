@@ -102,6 +102,19 @@ public:
     return m_fovY;
   }
 
+  const Plane &getPlane(int i) const
+  {
+    switch (i)
+    {
+      case 0: return m_near_face;
+      case 1: return m_far_face;
+      case 2: return m_left_face;
+      case 3: return m_right_face;
+      case 4: return m_up_face;
+      case 5: return m_down_face;
+    }
+  }
+
 private:
 
   void updateVertices(float half_vertical_size, float half_horizontal_size)
@@ -178,6 +191,7 @@ private:
   }
 
 private:
+
 
   Plane m_near_face;
   Plane m_far_face;
