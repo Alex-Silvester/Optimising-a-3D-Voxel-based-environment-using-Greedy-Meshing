@@ -221,7 +221,7 @@ bool Axis::isFaceCovered(const Rect* face, const std::vector<Rect*>& other_faces
 		return false;
 	}
 
-	glm::vec3 pos = face->getPosition();
+	const glm::vec3 &pos = face->getPosition();
 
 	//chec if the face os covered by another face
 	for (int i = 0; i < other_faces.size(); i++)
@@ -232,21 +232,10 @@ bool Axis::isFaceCovered(const Rect* face, const std::vector<Rect*>& other_faces
 			continue;
 		}
 
-		const glm::vec3& other_pos = face_position_cache[i];
-
-		//using early returns to speed up comparing two vectors
 		// comparing two glm::vec3-s is slower than comparing two floats
-		if (other_pos.x != pos.x)
-		{
-			continue;
-		}
-
-		if (other_pos.y != pos.y)
-		{
-			continue;
-		}
-
-		if (other_pos.z != pos.z)
+		if (face_position_cache[i].x != pos.x ||
+				face_position_cache[i].y != pos.y ||
+				face_position_cache[i].z != pos.z)
 		{
 			continue;
 		}
