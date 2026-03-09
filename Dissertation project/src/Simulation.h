@@ -428,11 +428,7 @@ void Simulation::update()
 	int i = 0;
 	for (Rect *face : faces)
 	{
-		glm::vec3 point = face->testFrustum(view_frustum, m_window.getCamera());
-
-	#if CLOSEST_POINTS == true
-		(*particle_pool[i++])->setPosition(point);
-	#endif
+		face->testFrustum(view_frustum);
 	}
 #else
 	x_axis.frustumCull(view_frustum, m_window.getCamera().Position);
