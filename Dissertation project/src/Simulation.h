@@ -180,7 +180,7 @@ private:
 	std::vector<Rect *> faces = {};
 #endif
 
-	Timer<std::nano> m_timer;
+	Timer<std::chrono::nanoseconds> m_timer;
 
 	float frustum_cull_time = 0.f;
 	float z_buffer_prepass_time = 0.f;
@@ -317,12 +317,40 @@ void Simulation::run()
 	}
 #endif
 
-	Timer<std::nano> timer;
+#if TIMEOUT == true 
+	#if TIMER_OR_FRAME == TIMER
+	Timer<std::chrono::milliseconds> timeout_timer;
+	timeout_timer.Start();
+  #elif TIMER_OR_FRAME == FRAME
+	int frames_passed = 0;
+  #endif
+#endif
+
+	Timer<std::chrono::nanoseconds> fps_timer;
 	while (m_window.open())
 	{
-		timer.Start();
+		fps_timer.Start();
+
+	#if USE_IMGUI == true
+		// Start the Dear ImGui frame
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+		ImGui::Begin("Stats");
+
+	#if TIMEOUT == true
+		ImGui::Text(
+							#if TIMER_OR_FRAME == TIMER
+							"Time: %.1f", timeout_timer.time()
+							#elif TIMER_OR_FRAME == FRAME
+			        "Frames: %d", frames_passed
+							#endif
+		);
+	#endif
+	#endif
 
 		m_window.pollEvents();
+
 
 		update();
 
@@ -333,10 +361,19 @@ void Simulation::run()
 		m_window.display();
 
 		//Getting the number of nanoseconds that have passed
-		m_fps = timer.End();
+		m_fps = fps_timer.End();
 
 	#if WRITE_TO_FILE == true
 		spf_file << m_fps;
+	#endif
+
+	#if TIMEOUT == true
+	  #if TIMER_OR_FRAME == TIMER
+		if (timeout_timer.End() >= TIMEOUT_TIME ) m_window.close();
+	  #elif	TIMER_OR_FRAME == FRAME
+		frames_passed++;
+		if (frames_passed >= TIMEOUT_FRAMES) m_window.close();
+    #endif
 	#endif
 	}
 	m_window_open = false;
@@ -410,11 +447,7 @@ void Simulation::update()
 	int i = 0;
 	for (Rect *face : faces)
 	{
-		glm::vec3 point = face->testFrustum(view_frustum, m_window.getCamera());
-
-	#if CLOSEST_POINTS == true
-		(*particle_pool[i++])->setPosition(point);
-	#endif
+		face->testFrustum(view_frustum);
 	}
 #else
 	x_axis.frustumCull(view_frustum, m_window.getCamera().Position);
@@ -454,22 +487,15 @@ void Simulation::update()
 		average_fps /= AVERAGE_FPS_SAMPLES;
 	}
 
-	// Start the Dear ImGui frame
-	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
-
-	ImGui::Begin("Stats");
-
-	ImGui::Text("Creation time: %.3f", m_world_creation_time);
-	ImGui::Text("Axis optimisation time: %.3f", m_axes_split_time);
+	ImGui::Text("Creation time: %.9f", m_world_creation_time);
+	ImGui::Text("Axis optimisation time: %.9f", m_axes_split_time);
 
 	ImGui::Text("Camera Position: [%.f %.f %.f]", position.x, position.y, position.z);
 
 	ImGui::Text("FPS: %.f", 1.f / m_fps);
 	ImGui::Text("Average FPS: %.f", average_fps);
-	ImGui::Text("Frustum Cull: %.5f", frustum_cull_time);
-	ImGui::Text("Z-Buffer pre-pass: %.5f", z_buffer_prepass_time);
+	ImGui::Text("Frustum Cull: %.9f", frustum_cull_time);
+	ImGui::Text("Z-Buffer pre-pass: %.9f", z_buffer_prepass_time);
 
 #if FACE_CHECKING == true
 	if (ImGui::Button("Get Face Data")  && current_face != nullptr)

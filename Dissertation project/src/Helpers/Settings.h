@@ -28,11 +28,21 @@
 //turns on and off frustum culling
 #define FRUSTUM_CULLING true
 
-//show closest points
-#define CLOSEST_POINTS false;
-
 //Write the profiling to file
 #define WRITE_TO_FILE false
+
+//whether the window has a timeout
+#define TIMEOUT true
+
+#define TIMER 1
+#define FRAME 2
+#define TIMER_OR_FRAME FRAME
+
+//time the window will stay open for to get data
+#define TIMEOUT_TIME 10.f
+
+//amount of frames before timeout
+#define TIMEOUT_FRAMES 200
 
 /*----------Simulation----------*/
 
@@ -68,7 +78,7 @@
 #define TAB_CHANGES_CURSOR false
 
 //whether there is the ability to use the freecam
-#define FREECAM_ACTIVE false
+#define FREECAM_ACTIVE true
 
 /*----------DrawWindow----------*/
 
