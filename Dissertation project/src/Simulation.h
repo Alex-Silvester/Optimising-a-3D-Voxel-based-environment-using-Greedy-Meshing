@@ -317,8 +317,14 @@ void Simulation::run()
 	}
 #endif
 
+#if TIMEOUT == true 
+	#if TIMER_OR_FRAME == TIMER
 	Timer<std::chrono::milliseconds> timeout_timer;
 	timeout_timer.Start();
+  #elif TIMER_OR_FRAME == FRAME
+	int frames_passed = 0;
+  #endif
+#endif
 
 	Timer<std::chrono::nanoseconds> fps_timer;
 	while (m_window.open())
@@ -332,7 +338,15 @@ void Simulation::run()
 		ImGui::NewFrame();
 		ImGui::Begin("Stats");
 
-		ImGui::Text("Time: %.1f", timeout_timer.time());
+	#if TIMEOUT == true
+		ImGui::Text(
+							#if TIMER_OR_FRAME == TIMER
+							"Time: %.1f", timeout_timer.time()
+							#elif TIMER_OR_FRAME == FRAME
+			        "Frames: %d", frames_passed
+							#endif
+		);
+	#endif
 	#endif
 
 		m_window.pollEvents();
@@ -354,7 +368,12 @@ void Simulation::run()
 	#endif
 
 	#if TIMEOUT == true
+	  #if TIMER_OR_FRAME == TIMER
 		if (timeout_timer.End() >= TIMEOUT_TIME ) m_window.close();
+	  #elif	TIMER_OR_FRAME == FRAME
+		frames_passed++;
+		if (frames_passed >= TIMEOUT_FRAMES) m_window.close();
+    #endif
 	#endif
 	}
 	m_window_open = false;

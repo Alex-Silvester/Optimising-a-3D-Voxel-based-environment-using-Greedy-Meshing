@@ -32,10 +32,17 @@
 #define WRITE_TO_FILE false
 
 //whether the window has a timeout
-#define TIMEOUT false
+#define TIMEOUT true
+
+#define TIMER 1
+#define FRAME 2
+#define TIMER_OR_FRAME FRAME
 
 //time the window will stay open for to get data
 #define TIMEOUT_TIME 10.f
+
+//amount of frames before timeout
+#define TIMEOUT_FRAMES 200
 
 /*----------Simulation----------*/
 
