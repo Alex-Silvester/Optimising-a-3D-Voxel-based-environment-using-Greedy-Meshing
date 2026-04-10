@@ -10,8 +10,10 @@
 // (or how much time it takes to change the average fps value)
 #define FPS_SAMPLE_SPACING 0.1
 
+#define WRITE_TO_CONSOLE false;
+
 //whether imgui is enabled or not
-#define USE_IMGUI true
+#define USE_IMGUI false
 
 //show and get data from selected faces
 #define FACE_CHECKING false;
@@ -29,7 +31,7 @@
 #define FRUSTUM_CULLING true
 
 //Write the profiling to file
-#define WRITE_TO_FILE false
+#define WRITE_TO_FILE true
 
 //whether the window has a timeout
 #define TIMEOUT true
@@ -78,7 +80,7 @@
 #define TAB_CHANGES_CURSOR false
 
 //whether there is the ability to use the freecam
-#define FREECAM_ACTIVE true
+#define FREECAM_ACTIVE false
 
 /*----------DrawWindow----------*/
 

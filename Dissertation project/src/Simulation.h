@@ -69,6 +69,7 @@ private:
 
 	void render();
 
+#if WRITE_TO_CONSOLE == true
 	void displayFPS()
 	{
 		for(int i = 0; i < AVERAGE_FPS_SAMPLES; i++)
@@ -108,6 +109,7 @@ private:
 			m_fps = 0;
 		}
 	}
+#endif
 
 	inline void worldCreation();
 
@@ -188,9 +190,15 @@ private:
 #if WRITE_TO_FILE == true
 	using OpenFile = std::ofstream;
 	OpenFile spf_file{"spf_file.txt"};
+#if FRUSTUM_CULLING == true
 	OpenFile fc_file {"fc_file.txt" };
+#endif
+#if Z_BUFFER_PRE_PASS == true
 	OpenFile zb_file {"zb_file.txt" };
+#endif
+#if GREEDY_MESH == true
 	OpenFile gm_file {"gm_file.txt" };
+#endif
 #endif
 };
 
@@ -281,11 +289,11 @@ bool Simulation::init()
 void Simulation::run()
 {
 	//use this thread if imgui isn't used to get mildly more accurate fps measurements
-#if USE_IMGUI == false
+#if USE_IMGUI == false && WRITE_TO_CONSOLE == true
 	//create a separate thread for the FPS count to not 
 	// interfere too much with the simulation loop
 	std::thread fps_thread([this] { displayFPS(); });
-#else
+#elif USE_IMGUI == true
 	const char *glsl_version = "#version 330 core";
 
 	float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor()); // Valid on GLFW 3.3+ only
@@ -365,6 +373,7 @@ void Simulation::run()
 
 	#if WRITE_TO_FILE == true
 		spf_file << m_fps;
+		spf_file << ",";
 	#endif
 
 	#if TIMEOUT == true
@@ -380,14 +389,20 @@ void Simulation::run()
 
 #if WRITE_TO_FILE == true
 	spf_file.close();
+#if FRUSTUM_CULLING == true
 	fc_file.close();
+#endif
+#if Z_BUFFER_PRE_PASS == true
 	zb_file.close();
+#endif
+#if GREEDY_MESH == true
 	gm_file.close();
 #endif
+#endif
 
-#if USE_IMGUI == false
+#if USE_IMGUI == false && WRITE_TO_CONSOLE == true
 	fps_thread.join();
-#else
+#elif USE_IMGUI == true
 	// Cleanup
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
@@ -459,6 +474,7 @@ void Simulation::update()
 
 #if WRITE_TO_FILE
 	fc_file << frustum_cull_time;
+	fc_file << ",";
 #endif
 
 #endif
@@ -563,6 +579,7 @@ void Simulation::render()
 
 #if WRITE_TO_FILE == true
 	zb_file << z_buffer_prepass_time;
+	zb_file << ",";
 #endif
 
 	// real render
@@ -621,7 +638,7 @@ void Simulation::worldCreation()
 
 	m_world_creation_time = m_timer.End();
 
-#if USE_IMGUI == false
+#if USE_IMGUI == false && WRITE_TO_CONSOLE == true
 	//ending the world creation time
 	printf("Creation time: ");
 	std::cout << std::to_string(m_world_creation_time) << std::endl;
@@ -643,11 +660,12 @@ inline void Simulation::axesSplitting()
 
 	m_axes_split_time = m_timer.End();
 
-#if WRITE_TO_FILE == true
+#if WRITE_TO_FILE == true && GREEDY_MESH == true
 	gm_file << m_axes_split_time;
+	gm_file << ",";
 #endif
 
-#if USE_IMGUI == false
+#if USE_IMGUI == false && WRITE_TO_CONSOLE == true
 	printf("Axes splitting time: ");
 	std::cout << std::to_string(m_axes_split_time) << std::endl;
 	printf("\n");
@@ -658,7 +676,7 @@ inline void Simulation::drawFaces()
 {
 #if (COLLECT_FACES | OCCLUSION_CULL_QUERY) == true
 
-  #if Z_BUFFER_PRE_PASS == false
+  #if Z_BUFFER_PRE_PASS == false && OCCLUSION_CULL_QUERY == true
 	std::sort(faces.begin(), faces.end(), [this](Rect *a, Rect *b)
 	{
 		return glm::distance(a->getCenter(), m_window.getCamera().Position) < glm::distance(b->getCenter(), m_window.getCamera().Position);
